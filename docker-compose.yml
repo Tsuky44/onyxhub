@@ -22,7 +22,7 @@ services:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
     volumes:
-      # Base SQLite et clé de chiffrement : à sauvegarder.
+      # Base SQLite et clé de chiffrement : à sauvegarder. Sur Unraid : /mnt/user/appdata/onyxhub:/data.
       - ./data:/data
       # Cache des affiches redimensionnées (ADR-0007) : jetable, mais le garder évite de tout retélécharger.
       - onyxhub-images:/app/.next/cache/images

@@ -27,6 +27,31 @@ docker compose up -d --build
 - `PUID` / `PGID` : l'utilisateur sous lequel tourne OnyxHub, propriétaire de `./data` (Unraid : `99` / `100`).
 - Les migrations de la base s'appliquent seules au démarrage.
 
+## Unraid
+
+- Mets les données dans `appdata`, pas en `./data` : avec le plugin Compose Manager, le compose vit sur la clé USB (`/boot`, en FAT32). La base s'y userait, et FAT32 refuse `chown`.
+- `PUID=99` et `PGID=100` (`nobody:users`), comme les autres conteneurs.
+- L'avertissement `Error parsing config file (/root/.docker/config.json): ... is a directory` vient de Docker sur l'hôte, pas d'OnyxHub. Il est sans effet.
+
+```yaml
+services:
+  onyxhub:
+    image: ghcr.io/tsuky44/onyxhub:latest
+    container_name: onyxhub
+    restart: unless-stopped
+    ports:
+      - "4400:4400"
+    environment:
+      PUID: "99"
+      PGID: "100"
+      TZ: "Europe/Paris"
+    volumes:
+      - /mnt/user/appdata/onyxhub:/data
+      - /mnt/user/appdata/onyxhub/cache-images:/app/.next/cache/images
+```
+
+Si le dossier monté refuse `chown` (partage NFS ou SMB, par exemple), OnyxHub démarre quand même et le signale dans ses journaux : il tourne alors en root tant que `/data` n'est pas accessible en écriture pour `PUID:PGID`.
+
 ## Brancher Onyx
 
 Dans les réglages d'Onyx, mets l'adresse d'OnyxHub dans « Adresse MediaHub » et la clé d'intégration générée dans Réglages d'OnyxHub dans « Clé API MediaHub » (ADR-0002).
