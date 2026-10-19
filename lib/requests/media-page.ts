@@ -2,6 +2,9 @@ import 'server-only'
 import type { Viewer } from '../auth/permissions'
 import { normalizeBaseUrl } from '../http'
 import { getSetting } from '../settings/store'
+import { localDay } from '../calendar/releases'
+import { isSubscribed } from '../calendar/subscriptions'
+import { isSubscribable } from '../calendar/tmdb-releases'
 import { getTmdb } from '../services/tmdb/client'
 import type { MediaType, TmdbDetails, TmdbVideo, TmdbWatchProviders } from '../services/tmdb/types'
 import { seasonAvailability, type Availability } from './availability'
@@ -45,6 +48,8 @@ export interface MediaPageData {
   requests: MediaRequestView[]
   seasons: SeasonRow[]
   inWatchLater: boolean
+  /** Le compte est abonné aux sorties du média, et le bouton a du sens (encore des sorties devant). */
+  subscription: { subscribed: boolean; available: boolean }
   trailer: TmdbVideo | null
   crew: CrewGroup[]
   providers: TmdbWatchProviders | null
@@ -90,6 +95,12 @@ async function externalUrl(mediaType: MediaType, tmdbId: number, tvdbId: number 
   return base && slug ? `${base}/series/${slug}` : null
 }
 
+function subscriptionState(userId: number, mediaType: MediaType, tmdbId: number, details: TmdbDetails): MediaPageData['subscription'] {
+  const subscribed = isSubscribed(userId, mediaType, tmdbId)
+  // Un abonnement déjà pris reste retirable, même une fois les sorties passées.
+  return { subscribed, available: subscribed || isSubscribable(mediaType, details, localDay(new Date())) }
+}
+
 export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer: Viewer): Promise<MediaPageData> {
   const details = await getTmdb().details(mediaType, tmdbId)
   const tvdbId = details.external_ids?.tvdb_id ?? null
@@ -130,6 +141,7 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
     })),
     seasons,
     inWatchLater: isInWatchLater(viewer.id, mediaType, tmdbId),
+    subscription: subscriptionState(viewer.id, mediaType, tmdbId, details),
     trailer: pickTrailer(details.videos?.results ?? []),
     crew: crewOf(details, mediaType),
     providers: details['watch/providers']?.results.FR ?? null,

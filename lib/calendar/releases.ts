@@ -16,11 +16,15 @@ export interface Release {
   mediaType: 'movie' | 'tv'
   tmdbId: number | null
   title: string
-  /** « S02E05 · Titre » pour un épisode. */
+  /** « S02E05 · Titre » pour un épisode, « S02 · Épisodes 1 à 8 » pour une saison sortie d'un coup. */
   subtitle: string | null
   posterPath: string | null
-  /** Le fichier est déjà là. */
+  /** Le fichier est déjà là (toujours `false` pour un abonnement : rien ne le dit). */
   hasFile: boolean
+  /** Saison et numéro d'un épisode : sert à regrouper et à dédoublonner. */
+  episode: { season: number; number: number } | null
+  /** Radarr/Sonarr (le serveur le suit) ou TMDB (un abonnement du compte). */
+  source: 'library' | 'subscription'
 }
 
 export const RELEASE_KIND_LABELS: Record<ReleaseKind, string> = {
@@ -72,6 +76,8 @@ export function movieReleases(movies: readonly RadarrCalendarMovie[], from: stri
         subtitle: null,
         posterPath: tmdbPosterPath(movie.images),
         hasFile: movie.hasFile,
+        episode: null,
+        source: 'library',
       })
     }
   }
@@ -80,11 +86,15 @@ export function movieReleases(movies: readonly RadarrCalendarMovie[], from: stri
 
 const pad2 = (value: number) => String(value).padStart(2, '0')
 
+export function episodeCode(season: number, episode: number): string {
+  return `S${pad2(season)}E${pad2(episode)}`
+}
+
 export function episodeReleases(episodes: readonly SonarrCalendarEpisode[], from: string, to: string): Release[] {
   return episodes.flatMap((episode): Release[] => {
     const date = dayOf(episode.airDateUtc ?? episode.airDate)
     if (!date || date < from || date > to) return []
-    const code = `S${pad2(episode.seasonNumber)}E${pad2(episode.episodeNumber)}`
+    const code = episodeCode(episode.seasonNumber, episode.episodeNumber)
     return [
       {
         id: `episode-${episode.id}`,
@@ -96,6 +106,8 @@ export function episodeReleases(episodes: readonly SonarrCalendarEpisode[], from
         subtitle: episode.title ? `${code} · ${episode.title}` : code,
         posterPath: tmdbPosterPath(episode.series?.images),
         hasFile: episode.hasFile,
+        episode: { season: episode.seasonNumber, number: episode.episodeNumber },
+        source: 'library',
       },
     ]
   })
@@ -103,4 +115,61 @@ export function episodeReleases(episodes: readonly SonarrCalendarEpisode[], from
 
 export function sortReleases(releases: Release[]): Release[] {
   return releases.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'fr') || a.id.localeCompare(b.id))
+}
+
+/** Une même sortie vue par Radarr/Sonarr et par TMDB a la même clé. */
+export function releaseKey(release: Release): string {
+  const media = `${release.mediaType}:${release.tmdbId ?? release.title}`
+  return release.episode ? `${media}:${release.episode.season}:${release.episode.number}` : `${media}:${release.kind}`
+}
+
+/** Les sorties des abonnements s'ajoutent à celles du serveur, qui gagnent quand les deux ont la même (elles savent si le fichier est là). */
+export function mergeReleases(library: readonly Release[], subscribed: readonly Release[]): Release[] {
+  const known = new Set(library.map(releaseKey))
+  return [...library, ...subscribed.filter((release) => !known.has(releaseKey(release)))]
+}
+
+function episodeRange(numbers: readonly number[]): string {
+  const sorted = [...numbers].sort((a, b) => a - b)
+  const first = sorted[0] ?? 0
+  const last = sorted[sorted.length - 1] ?? 0
+  return last - first === sorted.length - 1 ? `Épisodes ${first} à ${last}` : `${sorted.length} épisodes`
+}
+
+/**
+ * Les épisodes d'une même saison sortis le même jour deviennent une seule
+ * ligne : une saison Netflix ne remplit plus la journée de huit lignes.
+ * Même règle que MediaHub, qui regroupait par série, saison et jour.
+ */
+export function groupEpisodeDrops(releases: readonly Release[]): Release[] {
+  const groups = new Map<string, Release[]>()
+  const order: (Release | string)[] = []
+  for (const release of releases) {
+    if (!release.episode) {
+      order.push(release)
+      continue
+    }
+    const key = `${release.tmdbId ?? release.title}|${release.episode.season}|${release.date}|${release.source}`
+    const group = groups.get(key)
+    if (group) group.push(release)
+    else {
+      groups.set(key, [release])
+      order.push(key)
+    }
+  }
+  return order.flatMap((item): Release[] => {
+    if (typeof item !== 'string') return [item]
+    const group = groups.get(item) ?? []
+    const [first] = group
+    if (!first?.episode) return []
+    if (group.length === 1) return [first]
+    return [
+      {
+        ...first,
+        id: `drop-${first.id}`,
+        subtitle: `S${pad2(first.episode.season)} · ${episodeRange(group.flatMap((release) => (release.episode ? [release.episode.number] : [])))}`,
+        hasFile: group.every((release) => release.hasFile),
+      },
+    ]
+  })
 }

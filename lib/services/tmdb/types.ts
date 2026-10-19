@@ -129,6 +129,14 @@ export interface TmdbEpisode {
   vote_average?: number
 }
 
+/**
+ * Les dates de sortie d'un film par pays. `type` : 1 avant-première,
+ * 2 sortie limitée, 3 cinéma, 4 numérique, 5 physique, 6 télévision.
+ */
+export interface TmdbReleaseDates {
+  results: { iso_3166_1: string; release_dates: { type: number; release_date: string; certification?: string; note?: string }[] }[]
+}
+
 export interface TmdbSeason extends TmdbSeasonSummary {
   episodes: TmdbEpisode[]
 }

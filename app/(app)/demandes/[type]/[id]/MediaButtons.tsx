@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
-import { PlayIcon, WatchLaterIcon } from '@/lib/icons'
+import { PlayIcon, SubscribedIcon, SubscribeIcon, WatchLaterIcon } from '@/lib/icons'
 import type { MediaType } from '@/lib/services/tmdb/types'
+import { setSubscriptionAction } from '../../../calendrier/actions'
 import { setWatchLaterAction } from '../../actions'
 
 /** « Plus tard » : l'état change tout de suite, et revient en arrière si l'enregistrement échoue. */
@@ -36,6 +37,40 @@ export function WatchLaterButton({
     >
       <WatchLaterIcon size={18} weight={saved ? 'fill' : 'regular'} aria-hidden />
       {saved ? 'Dans ta liste' : 'Plus tard'}
+    </Button>
+  )
+}
+
+/** « S'abonner » : les sorties du média entrent dans le calendrier du compte, même sans demande. */
+export function SubscribeButton({
+  item,
+  initial,
+}: {
+  item: { mediaType: MediaType; tmdbId: number; title: string; posterPath: string | null }
+  initial: boolean
+}) {
+  const [subscribed, setSubscribed] = useState(initial)
+  const [pending, startTransition] = useTransition()
+  const Icon = subscribed ? SubscribedIcon : SubscribeIcon
+  return (
+    <Button
+      variant="secondary"
+      aria-pressed={subscribed}
+      disabled={pending}
+      onClick={() => {
+        const wanted = !subscribed
+        setSubscribed(wanted)
+        startTransition(async () => {
+          try {
+            setSubscribed(await setSubscriptionAction(item, wanted))
+          } catch {
+            setSubscribed(!wanted)
+          }
+        })
+      }}
+    >
+      <Icon size={18} weight={subscribed ? 'fill' : 'regular'} aria-hidden />
+      {subscribed ? 'Abonné' : "S'abonner"}
     </Button>
   )
 }

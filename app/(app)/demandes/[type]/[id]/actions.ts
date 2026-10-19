@@ -5,6 +5,7 @@ import { getViewer, type Viewer } from '@/lib/auth/viewer'
 import { errorMessage } from '@/lib/http'
 import { mediaDownloads, type DownloadProgress } from '@/lib/requests/downloads'
 import { mediaHref } from '@/lib/requests/format'
+import { isMediaType } from '@/lib/requests/media-item'
 import { automaticSearch, grabRelease, searchReleases, seasonEpisodes, type SeasonEpisode } from '@/lib/requests/media-tools'
 import { markAvailable, removeMedia } from '@/lib/requests/remove'
 import type { ArrRelease } from '@/lib/services/arr/types'
@@ -14,7 +15,6 @@ import type { MediaType } from '@/lib/services/tmdb/types'
 
 type Result<T> = { ok: true; value: T } | { ok: false; message: string }
 
-const isMediaType = (value: unknown): value is MediaType => value === 'movie' || value === 'tv'
 const isId = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value > 0
 const optionalId = (value: unknown): number | null => (isId(value) ? value : null)
 

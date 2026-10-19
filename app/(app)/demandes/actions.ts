@@ -6,6 +6,7 @@ import { errorMessage } from '@/lib/http'
 import { loadCatalog, type CatalogPage, type CatalogSource } from '@/lib/requests/catalog'
 import { createRequest } from '@/lib/requests/create'
 import { parseDiscoverQuery } from '@/lib/requests/discover-query'
+import { cleanMediaItem, isMediaType, isTmdbId } from '@/lib/requests/media-item'
 import { setWatchLater } from '@/lib/requests/watch-later'
 import { getTmdb } from '@/lib/services/tmdb/client'
 import type { MediaType, TmdbWatchProvider } from '@/lib/services/tmdb/types'
@@ -20,8 +21,6 @@ export type CatalogWire =
   | { kind: 'discover'; search: string }
   | { kind: 'related'; relation: 'similar' | 'recommendations'; mediaType: MediaType; tmdbId: number }
 
-const isMediaType = (value: unknown): value is MediaType => value === 'movie' || value === 'tv'
-const isTmdbId = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value > 0
 
 function toSource(wire: CatalogWire): CatalogSource | null {
   if (wire.kind === 'discover' && typeof wire.search === 'string') {
@@ -78,9 +77,9 @@ export async function setWatchLaterAction(
   wanted: boolean,
 ): Promise<boolean> {
   const viewer = await getViewer()
-  if (!isMediaType(item.mediaType) || !isTmdbId(item.tmdbId) || typeof item.title !== 'string') return !wanted
-  const posterPath = typeof item.posterPath === 'string' && item.posterPath.startsWith('/') ? item.posterPath : null
-  const result = setWatchLater(viewer.id, { mediaType: item.mediaType, tmdbId: item.tmdbId, title: item.title.slice(0, 300), posterPath }, wanted === true)
+  const media = cleanMediaItem(item)
+  if (!media) return !wanted
+  const result = setWatchLater(viewer.id, media, wanted === true)
   revalidatePath('/demandes')
   return result
 }

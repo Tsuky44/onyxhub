@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RadarrCalendarMovie, SonarrCalendarEpisode } from '../services/arr/types'
-import { episodeReleases, movieReleases, sortReleases, tmdbPosterPath } from './releases'
+import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sortReleases, tmdbPosterPath, type Release } from './releases'
 
 const movie = (fields: Partial<RadarrCalendarMovie>): RadarrCalendarMovie => ({
   id: 1,
@@ -50,12 +50,54 @@ describe('sorties Sonarr', () => {
   })
 
   it('trie par date puis par titre', () => {
-    const base = { kind: 'episode' as const, mediaType: 'tv' as const, tmdbId: 1, subtitle: null, posterPath: null, hasFile: false }
+    const base = { kind: 'episode' as const, mediaType: 'tv' as const, tmdbId: 1, subtitle: null, posterPath: null, hasFile: false, episode: null, source: 'library' as const }
     const sorted = sortReleases([
       { ...base, id: 'b', date: '2026-10-02', title: 'B' },
       { ...base, id: 'c', date: '2026-10-01', title: 'C' },
       { ...base, id: 'a', date: '2026-10-02', title: 'A' },
     ])
     expect(sorted.map((release) => release.id)).toEqual(['c', 'a', 'b'])
+  })
+})
+
+const episodeRelease = (number: number, fields: Partial<Release> = {}): Release => ({
+  id: `episode-${number}`,
+  date: '2026-10-20',
+  kind: 'episode',
+  mediaType: 'tv',
+  tmdbId: 1399,
+  title: 'GoT',
+  subtitle: `S02E0${number}`,
+  posterPath: null,
+  hasFile: false,
+  episode: { season: 2, number },
+  source: 'library',
+  ...fields,
+})
+
+describe("saisons sorties d'un coup", () => {
+  it("regroupe les épisodes d'une même saison sortis le même jour", () => {
+    const [drop, ...rest] = groupEpisodeDrops([episodeRelease(1), episodeRelease(2), episodeRelease(3)])
+    expect(rest).toHaveLength(0)
+    expect(drop).toMatchObject({ subtitle: 'S02 · Épisodes 1 à 3', hasFile: false })
+  })
+
+  it('compte les épisodes quand ils ne se suivent pas, et ne dit disponible que si tous le sont', () => {
+    const [drop] = groupEpisodeDrops([episodeRelease(1, { hasFile: true }), episodeRelease(4, { hasFile: true })])
+    expect(drop).toMatchObject({ subtitle: 'S02 · 2 épisodes', hasFile: true })
+  })
+
+  it('laisse seul un épisode unique ou sorti un autre jour', () => {
+    const releases = groupEpisodeDrops([episodeRelease(1), episodeRelease(2, { date: '2026-10-27' })])
+    expect(releases.map((release) => release.subtitle)).toEqual(['S02E01', 'S02E02'])
+  })
+})
+
+describe('abonnements et serveur', () => {
+  it('garde la sortie du serveur quand un abonnement donne la même', () => {
+    const library = episodeRelease(1, { hasFile: true })
+    const subscribed = episodeRelease(1, { id: 'tmdb-1', source: 'subscription' })
+    const other = episodeRelease(2, { id: 'tmdb-2', source: 'subscription' })
+    expect(mergeReleases([library], [subscribed, other]).map((release) => release.id)).toEqual(['episode-1', 'tmdb-2'])
   })
 })

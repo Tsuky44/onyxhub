@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { MediaRail } from '@/components/media/MediaRail'
 import { Poster } from '@/components/media/Poster'
-import { Badge, RequestStatusBadge } from '@/components/media/StatusBadge'
+import { RequestStatusBadge } from '@/components/media/StatusBadge'
 import { Panel, PanelError, ProgressBar } from '@/components/ui/Panel'
 import type { Viewer } from '@/lib/auth/viewer'
-import { localDay, RELEASE_KIND_LABELS } from '@/lib/calendar/releases'
+import { ReleaseRow } from '@/components/calendar/ReleaseRow'
+import { dayTitle } from '@/lib/calendar/query'
+import { localDay } from '@/lib/calendar/releases'
 import { upcoming, type UpcomingRelease } from '@/lib/calendar/upcoming'
 import { settle } from '@/lib/home/admin'
 import { homeRequests, type HomeRequest } from '@/lib/home/requests'
@@ -75,42 +77,14 @@ export async function MyRequests({ viewer }: { viewer: Viewer }) {
   )
 }
 
-const DAY = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-
 function dayLabel(date: string, today: string, tomorrow: string): string {
   if (date === today) return 'Aujourd\'hui'
   if (date === tomorrow) return 'Demain'
-  const label = DAY.format(new Date(`${date}T12:00:00`))
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
-
-function ReleaseRow({ release }: { release: UpcomingRelease }) {
-  const content = (
-    <>
-      <Poster path={release.posterPath} title={release.title} sizes="36px" source="w185" compact className="w-9 shrink-0" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-subhead font-semibold text-text">{release.title}</span>
-        <span className="block truncate text-footnote text-text-muted">{release.subtitle ?? RELEASE_KIND_LABELS[release.kind]}</span>
-      </span>
-      {release.hasFile ? <Badge label="Disponible" tone="success" /> : release.mine ? <Badge label="Ta demande" tone="accent" /> : null}
-    </>
-  )
-  const className = 'flex items-center gap-3 rounded-card p-2 -m-2'
-  return (
-    <li>
-      {release.tmdbId ? (
-        <Link href={mediaHref(release.mediaType, release.tmdbId)} className={`${className} transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill`}>
-          {content}
-        </Link>
-      ) : (
-        <div className={className}>{content}</div>
-      )}
-    </li>
-  )
+  return dayTitle(date)
 }
 
 export async function UpcomingReleases({ viewer, now }: { viewer: Viewer; now: Date }) {
-  const result = await settle(() => upcoming(14, viewer.name, now))
+  const result = await settle(() => upcoming(14, viewer, now))
   if (!result.ok) {
     return (
       <Panel title="Prochaines sorties" href="/calendrier" hrefLabel="Calendrier">

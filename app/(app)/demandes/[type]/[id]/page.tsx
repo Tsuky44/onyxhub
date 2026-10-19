@@ -16,7 +16,7 @@ import type { MediaType } from '@/lib/services/tmdb/types'
 import { tmdbImageUrl } from '@/lib/tmdb-image'
 import { AdminTools } from './AdminTools'
 import { DownloadPanel } from './DownloadPanel'
-import { TrailerButton, WatchLaterButton } from './MediaButtons'
+import { SubscribeButton, TrailerButton, WatchLaterButton } from './MediaButtons'
 import { CastRail, CollectionCard, Facts, Overview } from './MediaSections'
 import { RequestControl } from './RequestControl'
 import { SeasonList } from './SeasonList'
@@ -130,6 +130,9 @@ export default async function MediaPage({ params }: { params: Params }) {
               />
               {data.trailer && <TrailerButton videoKey={data.trailer.key} title={title} />}
               <WatchLaterButton item={{ mediaType, tmdbId, title, posterPath: media.poster_path }} initial={data.inWatchLater} />
+              {data.subscription.available && (
+                <SubscribeButton item={{ mediaType, tmdbId, title, posterPath: media.poster_path }} initial={data.subscription.subscribed} />
+              )}
             </div>
 
             {viewer.isAdmin && (

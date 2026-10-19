@@ -13,6 +13,7 @@ import type {
   TmdbExternalIds,
   TmdbGenre,
   TmdbPerson,
+  TmdbReleaseDates,
   TmdbSeason,
   TmdbSummary,
   TmdbWatchProvider,
@@ -55,6 +56,8 @@ export interface Tmdb {
   check(): Promise<void>
   details(type: MediaType, id: number): Promise<TmdbDetails>
   season(tvId: number, seasonNumber: number): Promise<TmdbSeason>
+  /** Les dates de sortie d'un film par pays (calendrier des abonnements). */
+  releaseDates(movieId: number): Promise<TmdbReleaseDates>
   collection(id: number): Promise<TmdbCollection>
   person(id: number): Promise<TmdbPerson>
   externalIds(type: MediaType, id: number): Promise<TmdbExternalIds>
@@ -103,6 +106,7 @@ export function createTmdb(apiKey: string): Tmdb {
         TTL.details,
       ),
     season: (tvId, seasonNumber) => get(`/tv/${tvId}/season/${seasonNumber}`, {}, TTL.details),
+    releaseDates: (movieId) => get(`/movie/${movieId}/release_dates`, {}, TTL.details),
     collection: (id) => get(`/collection/${id}`, {}, TTL.details),
     person: (id) => get(`/person/${id}`, { append_to_response: 'combined_credits' }, TTL.details),
     externalIds: (type, id) => get(`/${type}/${id}/external_ids`, {}, TTL.static),

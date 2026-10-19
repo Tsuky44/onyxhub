@@ -131,7 +131,7 @@ Dans `onyxhub/` :
 | 2 ✅ | Services : TMDB, Radarr, Sonarr, qBit (cache), Prowlarr, client Onyx — testés | tests verts avec réponses simulées |
 | 3 ✅ | Demandes : découverte, fiche, saisons, envoi, liste, admin, webhooks + contrat Onyx | une demande depuis l'app Onyx arrive dans OnyxHub |
 | 4 ✅ | Accueil utilisateur + résumé admin | les deux variantes affichent des données réelles |
-| 5 | Calendrier | sorties et abonnements visibles |
+| 5 ✅ | Calendrier | sorties et abonnements visibles |
 | 6 | Téléchargements : qBit, Prowlarr, fichiers SMB + partage | parité avec la page Téléchargements de MediaHub (hors ratio des trackers) |
 | 7 | Passe perf posters, a11y, mobile | vérifié au navigateur en largeur téléphone et desktop |
 | 8 | Dockerfile, compose, bascule `mediahub_url` dans Onyx | Onyx tourne sur OnyxHub |

@@ -67,4 +67,24 @@ export const watchLater = sqliteTable(
   (table) => [uniqueIndex('watch_later_user_media_unique').on(table.userId, table.mediaType, table.tmdbId)],
 )
 
+/**
+ * Abonnements au calendrier, par compte Onyx : les sorties d'un média qui
+ * n'est pas (ou pas encore) demandé apparaissent dans le calendrier du compte.
+ * MediaHub figeait une date de sortie à l'abonnement ; ici les dates sont
+ * relues dans TMDB, un report se voit.
+ */
+export const calendarSubscriptions = sqliteTable(
+  'calendar_subscriptions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: integer('user_id').notNull(),
+    mediaType: text('media_type', { enum: ['movie', 'tv'] }).notNull(),
+    tmdbId: integer('tmdb_id').notNull(),
+    title: text('title').notNull(),
+    posterPath: text('poster_path'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [uniqueIndex('calendar_subscriptions_user_media_unique').on(table.userId, table.mediaType, table.tmdbId)],
+)
+
 export type MediaRequestRow = typeof mediaRequests.$inferSelect

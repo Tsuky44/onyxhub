@@ -14,6 +14,8 @@ export {
   ArrowsClockwise as SyncIcon,
   BookmarkSimple as WatchLaterIcon,
   CalendarBlank as CalendarIcon,
+  CalendarCheck as SubscribedIcon,
+  CalendarPlus as SubscribeIcon,
   CaretDown as ChevronDownIcon,
   CaretLeft as ChevronLeftIcon,
   CaretRight as ChevronRightIcon,

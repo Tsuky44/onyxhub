@@ -1,4 +1,5 @@
 import 'server-only'
+import { eachLimited } from '../concurrency'
 import { randomUUID } from 'node:crypto'
 import type { MediaRequestRow } from '../db/schema'
 import { errorMessage, NotConfiguredError } from '../http'
@@ -71,15 +72,6 @@ export async function onArrEvent(event: {
 }
 
 // --- Import depuis Radarr/Sonarr (bouton « Synchroniser » de l'admin) ---
-
-/** Exécute `task` sur chaque élément, `limit` à la fois : un import de 500 séries ne lance pas 500 appels TMDB d'un coup. */
-async function eachLimited<T>(items: readonly T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {
-  let next = 0
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) await task(items[next++]!)
-  })
-  await Promise.all(workers)
-}
 
 function importedRow(fields: Pick<NewRequest, 'mediaType' | 'tmdbId' | 'title' | 'posterPath'>, batchId: string, added: string | undefined): Omit<NewRequest, 'seasonNumber' | 'tvdbId'> {
   const requestedAt = added ? new Date(added) : new Date()
