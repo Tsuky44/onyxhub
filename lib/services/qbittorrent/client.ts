@@ -110,8 +110,19 @@ export function createQbittorrent(config: QbitConfig, { isolated = false }: { is
           method: 'POST',
           headers: { ...baseHeaders, 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({ username: config.username, password: config.password }),
+        }).catch((error: unknown) => {
+          // qBit récent refuse des identifiants faux par un 401 ; tous bannissent l'IP par un 403 après trop d'échecs.
+          if (error instanceof ServiceError && error.status === 401) throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés', { status: 401, cause: error })
+          if (error instanceof ServiceError && error.status === 403) {
+            throw new ServiceError(SERVICE, "qBittorrent : l'IP d'OnyxHub est bannie après trop d'échecs de connexion (attends ou redémarre qBittorrent)", { status: 403, cause: error })
+          }
+          throw error
         })
-        if ((await response.text()).trim() !== 'Ok.') throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés')
+        // qBit 4 et 5.0 répondent `Ok.` / `Fails.` en 200 ; les versions récentes, 204 sans corps en cas de succès.
+        // Exiger `Ok.` faisait refuser un bon mot de passe.
+        const body = (await response.text()).trim()
+        if (body === 'Fails.') throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés')
+        if (body !== 'Ok.' && body !== '') throw new ServiceError(SERVICE, "qBittorrent : réponse inattendue à la connexion, vérifie que l'URL pointe bien sur qBittorrent")
         // Pas de cookie quand qBit dispense ce réseau d'authentification : les appels passent sans.
         session.sid = response.headers.get('set-cookie')?.match(/SID=[^;]+/)?.[0] ?? null
         session.loggedIn = true

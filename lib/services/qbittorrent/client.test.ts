@@ -38,6 +38,32 @@ describe('qBittorrent', () => {
     await expect(createQbittorrent(config).version()).rejects.toThrow('identifiants refusés')
   })
 
+  it('accepte la connexion des qBit récents (204 sans corps)', async () => {
+    const { calls, fetchMock } = mockFetch([{ match: /\/app\/version/, body: 'v5.2.0' }])
+    const original = fetchMock.getMockImplementation()!
+    fetchMock.mockImplementation(async (input, init) => {
+      if (String(input).endsWith('/auth/login')) return new Response(null, { status: 204, headers: { 'set-cookie': 'SID=abc123; HttpOnly; path=/' } })
+      return original(input, init)
+    })
+    expect(await createQbittorrent(config).version()).toBe('v5.2.0')
+    expect(calls.find((call) => call.url.endsWith('/app/version'))!.headers.get('Cookie')).toBe('SID=abc123')
+  })
+
+  it('refuse des identifiants faux renvoyés en 401 par les qBit récents', async () => {
+    mockFetch([{ method: 'POST', match: /\/auth\/login$/, status: 401, body: 'Unauthorized' }])
+    await expect(createQbittorrent(config).version()).rejects.toThrow('identifiants refusés')
+  })
+
+  it("dit quand l'IP est bannie (403 à la connexion)", async () => {
+    mockFetch([{ method: 'POST', match: /\/auth\/login$/, status: 403, body: 'Banned' }])
+    await expect(createQbittorrent(config).version()).rejects.toThrow('bannie')
+  })
+
+  it("signale une réponse qui ne vient pas de qBit plutôt que des identifiants refusés", async () => {
+    mockFetch([{ method: 'POST', match: /\/auth\/login$/, body: '<html>Connexion</html>' }])
+    await expect(createQbittorrent(config).version()).rejects.toThrow('réponse inattendue')
+  })
+
   it('ne tente pas de connexion sans utilisateur (réseau dispensé d\'authentification)', async () => {
     const { calls } = mockFetch([{ match: /\/app\/version/, body: 'v4.6.7' }])
     await createQbittorrent({ ...config, username: '', password: '' }).version()
