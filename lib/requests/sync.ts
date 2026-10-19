@@ -4,7 +4,8 @@ import type { MediaRequestRow } from '../db/schema'
 import { errorMessage, NotConfiguredError } from '../http'
 import { getRadarr } from '../services/arr/radarr'
 import { getSonarr } from '../services/arr/sonarr'
-import type { ArrImage, RadarrMovie, SonarrSeries } from '../services/arr/types'
+import { tmdbPosterPath } from '../calendar/releases'
+import type { RadarrMovie, SonarrSeries } from '../services/arr/types'
 import { getTmdb } from '../services/tmdb/client'
 import { seasonAvailability } from './availability'
 import { availabilityIn, getLibrary, invalidateLibrary, type LibraryIndex } from './library'
@@ -70,13 +71,6 @@ export async function onArrEvent(event: {
 }
 
 // --- Import depuis Radarr/Sonarr (bouton « Synchroniser » de l'admin) ---
-
-/** Le chemin TMDB d'une image *arr (`…/t/p/original/abc.jpg` → `/abc.jpg`), sinon `null`. */
-export function tmdbPosterPath(images: readonly ArrImage[] | undefined): string | null {
-  const poster = images?.find((image) => image.coverType === 'poster')
-  const match = poster?.remoteUrl?.match(/image\.tmdb\.org\/t\/p\/[^/]+(\/[^/?]+)/)
-  return match?.[1] ?? null
-}
 
 /** Exécute `task` sur chaque élément, `limit` à la fois : un import de 500 séries ne lance pas 500 appels TMDB d'un coup. */
 async function eachLimited<T>(items: readonly T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {

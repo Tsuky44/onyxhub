@@ -160,7 +160,7 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
                   />
                 )}
                 <Link href={mediaHref(group.mediaType, group.tmdbId)} className="flex min-w-0 flex-1 items-center gap-3 shell:gap-4">
-                  <Poster path={group.posterPath} title={group.title} sizes="48px" source="w185" className="w-11 shrink-0 shell:w-12" />
+                  <Poster path={group.posterPath} title={group.title} sizes="48px" source="w185" compact className="w-11 shrink-0 shell:w-12" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-callout font-semibold text-text">{group.title}</span>
                     <span className="block truncate text-footnote text-text-muted">

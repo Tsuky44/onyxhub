@@ -78,7 +78,7 @@ function Season({
     <li className="rounded-panel border border-glass-border bg-surface">
       <div className="flex items-center gap-3 p-3 shell:gap-4">
         <button type="button" onClick={toggle} aria-expanded={open} aria-controls={panelId} className="flex min-w-0 flex-1 items-center gap-3 text-left shell:gap-4">
-          <Poster path={season.posterPath} title={season.name} sizes="56px" source="w185" className="w-12 shrink-0 shell:w-14" />
+          <Poster path={season.posterPath} title={season.name} sizes="56px" source="w185" compact className="w-12 shrink-0 shell:w-14" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-callout font-semibold text-text">{season.name}</span>
             <span className="block text-footnote text-text-muted">

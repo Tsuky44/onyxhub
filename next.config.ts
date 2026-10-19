@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
     // affiche TMDB ne change jamais à chemin égal.
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31_536_000,
-    remotePatterns: [{ protocol: 'https', hostname: 'image.tmdb.org' }],
+    // TMDB pour tout le catalogue ; fanart.tv pour les affiches choisies dans Onyx (lectures en cours).
+    remotePatterns: [
+      { protocol: 'https', hostname: 'image.tmdb.org' },
+      { protocol: 'https', hostname: 'assets.fanart.tv' },
+    ],
   },
 }
 

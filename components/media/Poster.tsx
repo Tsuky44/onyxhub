@@ -14,6 +14,7 @@ export function Poster({
   sizes,
   source = 'w500',
   priority = false,
+  compact = false,
   className,
 }: {
   path: string | null | undefined
@@ -22,6 +23,8 @@ export function Poster({
   /** La taille TMDB d'origine, que next/image réduit ensuite. */
   source?: PosterSize
   priority?: boolean
+  /** Vignette (liste, ligne) : sans affiche, l'icône seule, le titre n'y tiendrait pas. */
+  compact?: boolean
   className?: string
 }) {
   const src = tmdbImageUrl(path, source)
@@ -30,9 +33,9 @@ export function Poster({
       {src ? (
         <Image src={src} alt="" fill sizes={sizes} priority={priority} className="object-cover" />
       ) : (
-        <div className="flex size-full flex-col items-center justify-center gap-2 p-3 text-center text-text-muted">
-          <MovieIcon size={28} aria-hidden />
-          <span className="line-clamp-3 text-footnote">{title}</span>
+        <div className={cn('flex size-full flex-col items-center justify-center gap-2 text-center text-text-muted', compact ? 'p-1' : 'p-3')}>
+          <MovieIcon size={compact ? 16 : 28} aria-hidden />
+          {!compact && <span className="line-clamp-3 text-footnote">{title}</span>}
         </div>
       )}
     </div>
