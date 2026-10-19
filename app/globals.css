@@ -1,0 +1,139 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens Quiet Premium — repris tels quels d'Onyx (app/lib/theme/app_colors.dart,
+ * app_type.dart, app_motion.dart et PROJECT_DESIGN.md).
+ *
+ * Les palettes et l'échelle typographique par défaut de Tailwind sont
+ * effacées (`initial`) : seules les valeurs ci-dessous existent, donc une
+ * couleur ou une taille hors charte ne compile tout simplement pas en classe.
+ * Une valeur qui manque s'ajoute ici, avec son rôle, avant d'être utilisée.
+ */
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Scène charbon OLED. */
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-elevated: #1c1c1c;
+  --color-hover: #252525;
+  --color-border: #2c2c2e;
+
+  /* Accent réservé au focus, à la sélection, à la progression et aux liens (≤ 5 % de la surface). */
+  --color-accent: #0a84ff;
+  --color-accent-muted: #64b5ff;
+  --color-on-accent: #ffffff;
+
+  --color-text: #f5f5f7;
+  --color-text-secondary: #a1a1a6;
+  --color-text-muted: #6e6e73;
+
+  --color-success: #30d158;
+  --color-warning: #ff9f0a;
+  --color-error: #ff453a;
+
+  /* L'or des notes de films, réservé aux étoiles. */
+  --color-rating: #f5c518;
+
+  /* Verre : liseré et remplissages, rationnés à la nav, aux menus et aux modales. */
+  --color-glass-border: rgb(255 255 255 / 0.08);
+  --color-glass-fill: rgb(255 255 255 / 0.06);
+  --color-glass-strong: rgb(0 0 0 / 0.45);
+  --color-nav: rgb(20 20 20 / 0.9);
+
+  /* Bouton principal : blanc à 92 %, texte presque noir. */
+  --color-primary-fill: rgb(255 255 255 / 0.92);
+  --color-on-primary: #0a0a0a;
+
+  /* Les 13 tailles d'AppType, et aucune autre. */
+  --text-*: initial;
+  --text-micro: 10px;
+  --text-caption: 11px;
+  --text-footnote: 12px;
+  --text-subhead: 13px;
+  --text-body: 14px;
+  --text-callout: 15px;
+  --text-headline: 17px;
+  --text-title3: 20px;
+  --text-title2: 22px;
+  --text-title1: 24px;
+  --text-display: 28px;
+  --text-large-title: 34px;
+  --text-hero: 40px;
+
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+  /* Cartes et boutons 12, panneaux 16, modales 24. */
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  --radius-modal: 24px;
+
+  /* Le point de rupture du shell d'Onyx : barre du haut au-delà, barre du bas en deçà. */
+  --breakpoint-shell: 900px;
+
+  /* Une seule courbe, ease-out (PROJECT_DESIGN.md §10). */
+  --ease-onyx: cubic-bezier(0, 0, 0.2, 1);
+
+  --shadow-float: 0 24px 48px rgb(0 0 0 / 0.45);
+}
+
+/*
+ * Durées d'animation : la plage 180–280 ms est le contrat d'Onyx, pas une
+ * préférence. On les utilise par `duration-(--motion-standard)` ; un nombre
+ * en dur est refusé par tests/guards/motion.test.ts.
+ */
+:root {
+  --motion-micro: 180ms;
+  --motion-standard: 200ms;
+  --motion-emphasis: 260ms;
+
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--color-bg);
+}
+
+:focus-visible {
+  outline: 2px solid rgb(10 132 255 / 0.9);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(10 132 255 / 0.35);
+}
+
+/*
+ * « Réduire les animations » : comme AppMotion.fade / AppMotion.move, les
+ * fondus et changements de couleur restent (ils ne sont pas vestibulaires),
+ * tout ce qui est géométrique disparaît.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-property: opacity, color, background-color, border-color !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility glass {
+  background-color: var(--color-nav);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+}
