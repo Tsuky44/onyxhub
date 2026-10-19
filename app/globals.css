@@ -132,6 +132,18 @@ body {
   }
 }
 
+/* Le fond de la connexion : un halo charbon discret, sans lavis coloré (PROJECT_DESIGN.md §8, Forms). */
+@utility login-backdrop {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, var(--color-elevated), var(--color-bg) 70%);
+}
+
+/* Verre niveau 2 (menus, modales) : plus opaque que la nav, le texte qui passe dessous ne doit pas se lire. */
+@utility glass-strong {
+  background-color: color-mix(in srgb, var(--color-elevated) 96%, transparent);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+}
+
 @utility glass {
   background-color: var(--color-nav);
   backdrop-filter: blur(28px) saturate(1.4);

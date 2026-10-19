@@ -127,7 +127,7 @@ Dans `onyxhub/` :
 | # | Phase | Livré quand |
 |---|---|---|
 | 0 ✅ | Socle : git, skills, CLAUDE.md, scaffold Next, tokens, shell de nav, guard tests, CI locale (lint, typecheck, vitest) | page vide navigable, guards verts |
-| 1 | Auth Onyx + Réglages (secrets chiffrés, « Tester ») | connexion avec un compte Onyx, admin vs utilisateur |
+| 1 ✅ | Auth Onyx + Réglages (secrets chiffrés, « Tester ») | connexion avec un compte Onyx, admin vs utilisateur |
 | 2 | Services : TMDB, Radarr, Sonarr, qBit (cache), Prowlarr, client Onyx — testés | tests verts avec réponses simulées |
 | 3 | Demandes : découverte, fiche, saisons, envoi, liste, admin, webhooks + contrat Onyx | une demande depuis l'app Onyx arrive dans OnyxHub |
 | 4 | Accueil utilisateur + résumé admin | les deux variantes affichent des données réelles |

@@ -10,7 +10,7 @@ export function Brand() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-card" aria-label="OnyxHub, accueil">
       <Image src="/brand/onyx-mark.svg" alt="" width={28} height={28} priority />
-      <Image src="/brand/onyx-wordmark.svg" alt="" width={51} height={12} className="h-3 w-auto" priority />
+      <Image src="/brand/onyx-wordmark.svg" alt="" width={51} height={12} priority />
       <span className="font-mono text-caption font-medium tracking-wide text-text-secondary">HUB</span>
     </Link>
   )

@@ -21,6 +21,8 @@ Pendant une tâche, travaille en silence : enchaîne lectures, modifications et 
 
 - `pnpm dev` : serveur de dev sur http://localhost:4400
 - `pnpm check` : ESLint + `tsc --noEmit` + Vitest (guard tests compris). Doit être vert avant chaque commit.
+- `pnpm build` : jamais pendant que `pnpm dev` tourne. Les deux écrivent dans `.next/`, et le serveur de dev se met alors à servir des modules périmés. Arrête le dev, build, puis supprime `.next/`.
+- `pnpm db:generate` : nouvelle migration après un changement de `lib/db/schema.ts`.
 
 ## Agent skills
 

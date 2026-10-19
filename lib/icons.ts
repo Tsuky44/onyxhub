@@ -8,6 +8,9 @@
  * donc ils s'affichent aussi bien dans un composant serveur que client.
  */
 export {
+  CheckCircle as SuccessIcon,
+  Copy as CopyIcon,
+  WarningCircle as WarningIcon,
   CalendarBlank as CalendarIcon,
   DownloadSimple as DownloadIcon,
   GearSix as SettingsIcon,
