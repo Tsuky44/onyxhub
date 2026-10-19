@@ -27,7 +27,7 @@
 
 ## 2. Architecture
 
-- **Next.js 16 (App Router, RSC d'abord) + TypeScript strict**, un seul process (pas de Docker : décision du 2026-10-19).
+- **Next.js 16 (App Router, RSC d'abord) + TypeScript strict**, un seul process, une seule image Docker (publiée sur GHCR par la CI).
 - **SQLite (better-sqlite3, WAL) + Drizzle** uniquement. Tables minimales : `settings` (secrets chiffrés), `media_requests`, `calendar_subscriptions`, `watch_later` (ou mappé sur les listes Onyx), `audit_log`.
 - **Tailwind v4** avec les tokens Onyx en variables CSS. Pas de lib UI lourde.
 - **TanStack Query** seulement là où c'est vivant (téléchargements, statut d'une demande). Le reste est rendu serveur.
@@ -134,6 +134,6 @@ Dans `onyxhub/` :
 | 5 ✅ | Calendrier | sorties et abonnements visibles |
 | 6 ✅ | Téléchargements : qBit, Prowlarr, fichiers SMB + partage | parité avec la page Téléchargements de MediaHub (hors ratio des trackers) |
 | 7 ✅ | Passe perf posters, a11y, mobile | vérifié au navigateur en largeur téléphone et desktop |
-| 8 ✖ | ~~Dockerfile, compose~~ abandonnés (2026-10-19). Reste la bascule `mediahub_url` dans les réglages d'Onyx, à faire côté Onyx | Onyx tourne sur OnyxHub |
+| 8 ✅ | Dockerfile, compose (volumes `/data` et cache d'affiches, PUID/PGID), CI GitHub (tests + image GHCR amd64/arm64) ; reste la bascule `mediahub_url` dans les réglages d'Onyx | `docker compose up` sert OnyxHub ; Onyx tourne sur OnyxHub |
 
 Chaque phase se termine par lint + typecheck + tests verts et un passage dans le navigateur.

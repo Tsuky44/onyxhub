@@ -1,0 +1,31 @@
+# OnyxHub à côté d'Onyx. Toute la configuration se fait ensuite dans la page Réglages
+# (TMDB, Radarr, Sonarr, qBittorrent, Prowlarr, SMB) : seules les variables ci-dessous
+# servent au démarrage, voir .env.example.
+services:
+  onyxhub:
+    image: ghcr.io/${GITHUB_OWNER:-tsuky44}/onyxhub:${ONYXHUB_TAG:-latest}
+    # Pour construire depuis les sources plutôt que tirer l'image : `docker compose up --build`.
+    build: .
+    container_name: onyxhub
+    restart: unless-stopped
+    ports:
+      - "${ONYXHUB_PORT:-4400}:4400"
+    environment:
+      # Recommandé : l'adresse d'Onyx telle que le conteneur la voit (ADR-0004).
+      ONYX_URL: ${ONYX_URL:-}
+      # Facultatif : sinon générée dans Réglages, puis à recopier dans Onyx.
+      ONYXHUB_INTEGRATION_KEY: ${ONYXHUB_INTEGRATION_KEY:-}
+      # Facultatif : sinon un fichier secret.key est créé dans /data au premier démarrage.
+      ONYXHUB_SECRET: ${ONYXHUB_SECRET:-}
+      TZ: ${TZ:-Europe/Paris}
+      # Propriétaire des fichiers de ./data sur l'hôte (Unraid : 99 et 100).
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+    volumes:
+      # Base SQLite et clé de chiffrement : à sauvegarder.
+      - ./data:/data
+      # Cache des affiches redimensionnées (ADR-0007) : jetable, mais le garder évite de tout retélécharger.
+      - onyxhub-images:/app/.next/cache/images
+
+volumes:
+  onyxhub-images:

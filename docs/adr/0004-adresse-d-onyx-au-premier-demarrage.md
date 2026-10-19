@@ -16,5 +16,5 @@ Les comptes viennent d'Onyx (ADR-0001), donc se connecter suppose de connaître 
 
 ## Conséquences
 
-- Pendant la toute première minute, avant que le propriétaire ne se connecte, quelqu'un sur le réseau pourrait pointer OnyxHub vers un autre serveur Onyx. Le risque est borné (un OnyxHub vide, sans clé ni service branché) et disparaît avec `ONYX_URL`, que `.env.example` recommande.
+- Pendant la toute première minute, avant que le propriétaire ne se connecte, quelqu'un sur le réseau pourrait pointer OnyxHub vers un autre serveur Onyx. Le risque est borné (un OnyxHub vide, sans clé ni service branché) et disparaît avec `ONYX_URL`, que `.env.example` et `docker-compose.yml` recommandent.
 - Une adresse fausse enregistrée par Réglages est impossible : elle aurait déconnecté tout le monde, admin compris.

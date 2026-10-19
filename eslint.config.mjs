@@ -15,7 +15,7 @@ const config = [
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
-  { ignores: ['.next/**', 'node_modules/**', '.claude/**', 'data/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', 'node_modules/**', '.claude/**', '.agents/**', 'data/**', 'next-env.d.ts'] },
 ]
 
 export default config

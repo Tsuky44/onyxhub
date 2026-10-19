@@ -22,5 +22,5 @@ Chaque affiche choisit sa taille TMDB source (`source`) et déclare sa largeur a
 
 ## Conséquences
 
-- Le cache vit dans `.next/cache/images` : supprimer `.next` (build propre) le vide, et il se reconstruit à la demande, une image à la fois.
+- Le cache vit dans `.next/cache/images` : en Docker, c'est un volume (`docker-compose.yml`), sinon chaque nouvelle image le viderait. Perdu, il se reconstruit à la demande, une image à la fois.
 - Une nouvelle origine d'image s'ajoute à `images.remotePatterns` : rien d'autre ne passe par l'optimiseur.

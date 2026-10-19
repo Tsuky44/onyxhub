@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 
 /**
  * Le dossier des données persistantes : base SQLite et clé de chiffrement.
- * `ONYXHUB_DATA_DIR` le déplace (vérifications sur une base jetable, par exemple).
+ * `ONYXHUB_DATA_DIR` le déplace : `/data` dans l'image Docker, monté en volume.
  */
 export function dataDir(): string {
   // `turbopackIgnore` : chemin connu seulement à l'exécution. Sans ce

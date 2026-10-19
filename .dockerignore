@@ -1,0 +1,18 @@
+# Ce que l'image n'a pas à voir : dépendances et builds locaux, données, secrets, outillage.
+node_modules
+.next
+out
+data
+.env
+.env.*
+!.env.example
+.git
+.github
+.claude
+.agents
+graphify-out
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store
+Dockerfile
+docker-compose.yml
