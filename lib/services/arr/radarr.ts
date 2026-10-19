@@ -19,8 +19,11 @@ export interface Radarr {
   rootFolders(): Promise<RootFolder[]>
   diskSpace(): Promise<DiskSpace[]>
   health(): Promise<HealthCheck[]>
+  /** Toute la bibliothèque Radarr (index de disponibilité). */
+  movies(): Promise<RadarrMovie[]>
   /** Le film s'il est dans la bibliothèque Radarr, `null` sinon. */
   movieByTmdbId(tmdbId: number): Promise<RadarrMovie | null>
+  setMonitored(movieId: number, monitored: boolean): Promise<RadarrMovie>
   /**
    * Demande un film : l'ajoute s'il est absent, le surveille s'il était
    * ignoré, ne fait rien s'il est déjà demandé ou disponible. Lance la
@@ -54,6 +57,7 @@ export function createRadarr(config: ArrConfig): Radarr {
     rootFolders: () => api.getStatic('/rootfolder'),
     diskSpace: () => api.get('/diskspace'),
     health: () => api.get('/health'),
+    movies: () => api.get('/movie', {}, 30_000),
     async movieByTmdbId(tmdbId) {
       // `/movie?tmdbId=` ne lit que la bibliothèque locale. MediaHub passait
       // par `/movie/lookup`, qui interroge en plus le serveur de métadonnées
@@ -82,6 +86,10 @@ export function createRadarr(config: ArrConfig): Radarr {
       if (movie.id) await radarr.search(movie.id)
       return { kind: 'added', movie }
     },
+    async setMonitored(movieId, monitored) {
+      const movie = await api.get<RadarrMovie>(`/movie/${movieId}`)
+      return api.put<RadarrMovie>(`/movie/${movieId}`, { ...movie, monitored })
+    },
     async deleteMovie(movieId, deleteFiles) {
       await api.delete(`/movie/${movieId}`, { deleteFiles, addImportExclusion: false })
     },
@@ -98,7 +106,8 @@ export function createRadarr(config: ArrConfig): Radarr {
     },
     calendar: (start, end) =>
       api.get('/calendar', { start: start.toISOString(), end: end.toISOString(), unmonitored: false }),
-    releases: (movieId) => api.get('/release', { movieId }),
+    // Radarr interroge chaque indexeur en direct : une recherche interactive peut prendre une minute.
+    releases: (movieId) => api.get('/release', { movieId }, 120_000),
     async grabRelease({ guid, indexerId }) {
       await api.post('/release', { guid, indexerId }, 30_000)
     },

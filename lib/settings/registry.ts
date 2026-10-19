@@ -30,6 +30,8 @@ export interface ServiceDefinition {
   fields: readonly SettingField[]
   /** Le bouton « Tester » existe (un service sans test le dit dans sa description). */
   testable: boolean
+  /** Le secret que le bouton « Générer » remplit (clé d'intégration, secret des webhooks). */
+  generates?: string
 }
 
 export const SERVICES = [
@@ -45,7 +47,17 @@ export const SERVICES = [
     label: 'Clé d\'intégration',
     description: 'La clé que le serveur Onyx présente pour envoyer les demandes faites dans l\'app. Dans les réglages d\'Onyx, mets l\'URL d\'OnyxHub dans « Adresse MediaHub » et cette clé dans « Clé API MediaHub ».',
     testable: false,
+    generates: 'integration_api_key',
     fields: [{ key: 'integration_api_key', label: 'Clé', kind: 'secret', env: 'ONYXHUB_INTEGRATION_KEY' }],
+  },
+  {
+    id: 'webhooks',
+    label: 'Webhooks Radarr et Sonarr',
+    description:
+      "Font avancer les demandes dès qu'une release est saisie ou importée. Dans Radarr et Sonarr, Réglages → Connexions → Webhook, URL : adresse d'OnyxHub suivie de /api/webhooks/radarr?secret=… (ou /sonarr), événements « À la saisie », « À l'import » et « À la mise à niveau ». Sans webhook, les statuts se mettent à jour toutes les 5 minutes.",
+    testable: false,
+    generates: 'webhook_secret',
+    fields: [{ key: 'webhook_secret', label: 'Secret', kind: 'secret' }],
   },
   {
     id: 'tmdb',

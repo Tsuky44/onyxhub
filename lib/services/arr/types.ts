@@ -37,6 +37,8 @@ export interface RadarrMovie {
   tmdbId: number
   imdbId?: string
   title: string
+  /** Le segment d'URL de la fiche dans l'interface Radarr (`/movie/<slug>`). */
+  titleSlug?: string
   year: number
   overview?: string
   monitored: boolean
@@ -75,6 +77,8 @@ export interface SonarrSeries {
   tmdbId?: number
   imdbId?: string
   title: string
+  /** Le segment d'URL de la fiche dans l'interface Sonarr (`/series/<slug>`). */
+  titleSlug?: string
   year?: number
   overview?: string
   monitored: boolean

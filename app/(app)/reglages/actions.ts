@@ -39,9 +39,9 @@ export async function serviceAction(serviceId: ServiceId, _previous: ServiceForm
   const intent = form.get('intent')
 
   if (intent === 'generate') {
-    if (serviceId !== 'integration') return { kind: 'error', message: 'Action inconnue.' }
+    if (!service.generates) return { kind: 'error', message: 'Action inconnue.' }
     const key = randomToken()
-    setSettings({ integration_api_key: key })
+    setSettings({ [service.generates as SettingKey]: key })
     revalidatePath('/reglages')
     return { kind: 'generated', key }
   }

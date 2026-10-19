@@ -93,7 +93,7 @@ export function ServiceCard({ serviceId, snapshots }: { serviceId: ServiceId; sn
           })}
         </div>
 
-        {state.kind === 'generated' && <GeneratedKey value={state.key} />}
+        {state.kind === 'generated' && <GeneratedKey serviceId={serviceId} value={state.key} />}
 
         <footer className="flex flex-wrap items-center gap-3 border-t border-glass-border px-5 py-4 shell:px-6">
           <Feedback state={state} />
@@ -111,9 +111,9 @@ export function ServiceCard({ serviceId, snapshots }: { serviceId: ServiceId; sn
                 Tester
               </Button>
             )}
-            {service.id === 'integration' && (
+            {service.generates && (
               <Button type="submit" name="intent" value="generate" variant="secondary" disabled={pending}>
-                Générer une clé
+                {service.id === 'webhooks' ? 'Générer un secret' : 'Générer une clé'}
               </Button>
             )}
             {service.id !== 'onyx' && status !== 'empty' && (

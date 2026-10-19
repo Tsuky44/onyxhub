@@ -13,7 +13,8 @@ export interface ArrConfig {
 }
 
 export interface ArrClient {
-  get<T>(path: string, params?: Record<string, QueryValue>): Promise<T>
+  /** `timeoutMs` : la bibliothèque entière d'une grosse instance pèse plusieurs Mo. */
+  get<T>(path: string, params?: Record<string, QueryValue>, timeoutMs?: number): Promise<T>
   /** `get` mis en cache 10 min : profils de qualité, dossiers racines… */
   getStatic<T>(path: string): Promise<T>
   post<T>(path: string, body: unknown, timeoutMs?: number): Promise<T>
@@ -44,8 +45,8 @@ export function createArrClient(service: string, apiVersion: 'v1' | 'v3', config
   }
 
   const client: ArrClient = {
-    get<T>(path: string, params: Record<string, QueryValue> = {}): Promise<T> {
-      return requestJson<T>(service, withQuery(`${root}${path}`, params), { headers, readErrorDetail: true })
+    get<T>(path: string, params: Record<string, QueryValue> = {}, timeoutMs?: number): Promise<T> {
+      return requestJson<T>(service, withQuery(`${root}${path}`, params), { headers, readErrorDetail: true, timeoutMs })
     },
     getStatic<T>(path: string): Promise<T> {
       // La clé inclut l'URL de base : deux instances, ou une URL corrigée, ne se mélangent pas.

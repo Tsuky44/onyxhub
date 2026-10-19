@@ -19,7 +19,12 @@ import type {
 } from './types'
 
 const SERVICE = 'TMDB'
-const BASE = 'https://api.themoviedb.org/3'
+const DEFAULT_BASE = 'https://api.themoviedb.org/3'
+
+/** `TMDB_API_URL` remplace l'API publique : un miroir, ou un faux TMDB pour vérifier l'interface sans clé. */
+function apiBase(): string {
+  return process.env.TMDB_API_URL?.trim().replace(/\/+$/, '') || DEFAULT_BASE
+}
 const LANGUAGE = 'fr-FR'
 
 const MINUTE = 60_000
@@ -53,6 +58,8 @@ export interface Tmdb {
   collection(id: number): Promise<TmdbCollection>
   person(id: number): Promise<TmdbPerson>
   externalIds(type: MediaType, id: number): Promise<TmdbExternalIds>
+  /** La série TMDB d'un identifiant TVDB (import depuis Sonarr v3, qui ne donne pas l'identifiant TMDB). */
+  findByTvdb(tvdbId: number): Promise<TmdbSummary | null>
   recommendations(type: MediaType, id: number, page?: number): Promise<Paged<TmdbSummary>>
   similar(type: MediaType, id: number, page?: number): Promise<Paged<TmdbSummary>>
   discover(type: MediaType, filters?: DiscoverFilters): Promise<Paged<TmdbSummary>>
@@ -72,7 +79,7 @@ export function createTmdb(apiKey: string): Tmdb {
   const auth = tmdbAuth(apiKey)
 
   function get<T>(path: string, params: Record<string, QueryValue>, ttlMs: number | null): Promise<T> {
-    const publicUrl = withQuery(`${BASE}${path}`, { language: LANGUAGE, ...params })
+    const publicUrl = withQuery(`${apiBase()}${path}`, { language: LANGUAGE, ...params })
     const load = () =>
       requestJson<T>(SERVICE, withQuery(publicUrl, auth.params), { headers: auth.headers, timeoutMs: 8_000 })
     if (ttlMs === null) return load()
@@ -99,6 +106,11 @@ export function createTmdb(apiKey: string): Tmdb {
     collection: (id) => get(`/collection/${id}`, {}, TTL.details),
     person: (id) => get(`/person/${id}`, { append_to_response: 'combined_credits' }, TTL.details),
     externalIds: (type, id) => get(`/${type}/${id}/external_ids`, {}, TTL.static),
+    async findByTvdb(tvdbId) {
+      const found = await get<{ tv_results?: TmdbSummary[] }>(`/find/${tvdbId}`, { external_source: 'tvdb_id' }, TTL.static)
+      const show = found.tv_results?.[0]
+      return show ? { ...show, media_type: 'tv' } : null
+    },
     recommendations: async (type, id, page = 1) =>
       withType(await get<Paged<TmdbSummary>>(`/${type}/${id}/recommendations`, { page }, TTL.details), type),
     similar: async (type, id, page = 1) => withType(await get<Paged<TmdbSummary>>(`/${type}/${id}/similar`, { page }, TTL.details), type),

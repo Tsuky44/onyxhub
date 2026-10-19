@@ -2,7 +2,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import { notFound, redirect } from 'next/navigation'
 import { cache } from 'react'
-import { fetchMe } from '../services/onyx/auth'
+import { fetchMe, onyxBaseUrl } from '../services/onyx/auth'
 import { toViewer, type Viewer } from './permissions'
 import { readSession } from './session'
 
@@ -34,6 +34,9 @@ function remember(key: string, viewer: Viewer): void {
 export const getOptionalViewer = cache(async (): Promise<Viewer | null> => {
   const session = await readSession()
   if (!session) return null
+  // Une session sans adresse d'Onyx (base effacée, premier démarrage) ne peut
+  // pas être vérifiée : retour à la connexion, qui demande l'adresse.
+  if (!onyxBaseUrl()) return null
 
   const key = createHash('sha256').update(session.token).digest('hex')
   const hit = meCache.get(key)

@@ -29,6 +29,8 @@ export interface Sonarr {
   rootFolders(): Promise<RootFolder[]>
   diskSpace(): Promise<DiskSpace[]>
   health(): Promise<HealthCheck[]>
+  /** Toute la bibliothèque Sonarr (index de disponibilité). */
+  allSeries(): Promise<SonarrSeries[]>
   /** La série si elle est dans la bibliothèque Sonarr, `null` sinon. */
   seriesByTvdbId(tvdbId: number): Promise<SonarrSeries | null>
   /** La fiche Sonarr d'une série, présente ou non dans la bibliothèque (pour connaître ses saisons). */
@@ -37,7 +39,11 @@ export interface Sonarr {
   requestSeasons(tvdbId: number, seasons: readonly number[] | 'all'): Promise<SeriesRequestOutcome>
   episodes(seriesId: number): Promise<SonarrEpisode[]>
   episodeFiles(seriesId: number): Promise<SonarrEpisodeFile[]>
-  setSeasonMonitored(seriesId: number, seasonNumber: number, monitored: boolean): Promise<void>
+  /** Change la surveillance de quelques saisons en une seule écriture, et rend la série à jour. */
+  setSeasonsMonitored(seriesId: number, seasonNumbers: readonly number[], monitored: boolean): Promise<SonarrSeries>
+  searchSeason(seriesId: number, seasonNumber: number): Promise<void>
+  searchEpisodes(episodeIds: readonly number[]): Promise<void>
+  searchSeries(seriesId: number): Promise<void>
   deleteSeries(seriesId: number, deleteFiles: boolean): Promise<void>
   deleteEpisodeFile(episodeFileId: number): Promise<void>
   queue(): Promise<QueueItem[]>
@@ -97,6 +103,7 @@ export function createSonarr(config: ArrConfig): Sonarr {
     rootFolders: () => api.getStatic('/rootfolder'),
     diskSpace: () => api.get('/diskspace'),
     health: () => api.get('/health'),
+    allSeries: () => api.get('/series', {}, 30_000),
     async seriesByTvdbId(tvdbId) {
       // `/series?tvdbId=` ne lit que la bibliothèque, sans appel au serveur de métadonnées.
       const series = await api.get<SonarrSeries[]>('/series', { tvdbId })
@@ -118,11 +125,14 @@ export function createSonarr(config: ArrConfig): Sonarr {
     },
     episodes: (seriesId) => api.get('/episode', { seriesId }),
     episodeFiles: (seriesId) => api.get('/episodefile', { seriesId }),
-    async setSeasonMonitored(seriesId, seasonNumber, monitored) {
+    async setSeasonsMonitored(seriesId, seasonNumbers, monitored) {
+      const wanted = new Set(seasonNumbers)
       const series = await api.get<SonarrSeries>(`/series/${seriesId}`)
-      const seasons = series.seasons.map((season) => (season.seasonNumber === seasonNumber ? { ...season, monitored } : season))
-      await api.put(`/series/${seriesId}`, { ...series, seasons })
+      const seasons = series.seasons.map((season) => (wanted.has(season.seasonNumber) ? { ...season, monitored } : season))
+      return api.put<SonarrSeries>(`/series/${seriesId}`, { ...series, seasons })
     },
+    searchSeason: (seriesId, seasonNumber) => searchSeasons(seriesId, [seasonNumber]),
+    searchEpisodes: (episodeIds) => api.command('EpisodeSearch', { episodeIds }),
     async deleteSeries(seriesId, deleteFiles) {
       await api.delete(`/series/${seriesId}`, { deleteFiles, addImportListExclusion: false })
     },
@@ -143,7 +153,9 @@ export function createSonarr(config: ArrConfig): Sonarr {
     },
     calendar: (start, end) =>
       api.get('/calendar', { start: start.toISOString(), end: end.toISOString(), unmonitored: false, includeSeries: true }),
-    releases: (query) => api.get('/release', 'episodeId' in query ? { episodeId: query.episodeId } : query),
+    // Sonarr interroge chaque indexeur en direct : une recherche interactive peut prendre une minute.
+    releases: (query) => api.get('/release', 'episodeId' in query ? { episodeId: query.episodeId } : query, 120_000),
+    searchSeries: (seriesId) => api.command('SeriesSearch', { seriesId }),
     async grabRelease({ guid, indexerId }) {
       await api.post('/release', { guid, indexerId }, 30_000)
     },

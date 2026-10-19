@@ -1,13 +1,17 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
 
-type Variant = 'primary' | 'secondary' | 'ghost'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-quiet'
 
 const VARIANTS: Record<Variant, string> = {
   // PROJECT_DESIGN.md §8 : blanc à 92 %, texte presque noir, pas d'ombre lourde.
   primary: 'bg-primary-fill text-on-primary hover:bg-text',
   secondary: 'border border-glass-border bg-glass-fill text-text hover:bg-hover',
   ghost: 'text-text-secondary hover:bg-glass-fill hover:text-text',
+  // Une action qui détruit (suppression) : le rouge d'erreur, réservé à la confirmation.
+  danger: 'bg-error text-text hover:bg-error/85',
+  // Le bouton qui ouvre cette confirmation : secondaire, texte rouge.
+  'danger-quiet': 'border border-glass-border bg-glass-fill text-error hover:bg-hover',
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

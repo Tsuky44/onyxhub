@@ -149,3 +149,11 @@ body {
   backdrop-filter: blur(28px) saturate(1.4);
   -webkit-backdrop-filter: blur(28px) saturate(1.4);
 }
+
+/* Les rangées qui défilent à l'horizontale (onglets, rails d'affiches) : le geste suffit, la barre grise en trop. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

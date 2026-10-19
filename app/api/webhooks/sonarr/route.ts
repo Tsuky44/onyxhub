@@ -1,0 +1,22 @@
+import { revalidatePath } from 'next/cache'
+import { NextResponse } from 'next/server'
+import { webhookAuthorized } from '@/lib/auth/webhook'
+import { errorMessage } from '@/lib/http'
+import { onArrEvent } from '@/lib/requests/sync'
+import { parseSonarrEvent } from '@/lib/requests/webhook-payload'
+
+/** Webhook Sonarr : fait avancer les demandes du média concerné (saisie, import, suppression…). */
+export async function POST(request: Request) {
+  if (!webhookAuthorized(request)) return NextResponse.json({ error: 'Secret de webhook absent ou invalide.' }, { status: 401 })
+
+  const event = parseSonarrEvent(await request.json().catch(() => null))
+  if (!event) return NextResponse.json({ success: true })
+  try {
+    if ((await onArrEvent(event)) > 0) revalidatePath('/demandes', 'layout')
+  } catch (error) {
+    // Sonarr réessaie un webhook en échec : on le dit, sans faire tomber la route.
+    console.error(`[webhook sonarr] ${event.eventType} : ${errorMessage(error)}`)
+    return NextResponse.json({ error: 'Traitement impossible pour le moment.' }, { status: 503 })
+  }
+  return NextResponse.json({ success: true })
+}

@@ -103,6 +103,9 @@ export interface TmdbDetails extends TmdbSummary {
   number_of_episodes?: number
   seasons?: TmdbSeasonSummary[]
   networks?: { id: number; name: string; logo_path: string | null }[]
+  created_by?: { id: number; name: string; profile_path: string | null }[]
+  last_air_date?: string | null
+  in_production?: boolean
   production_companies?: { id: number; name: string; logo_path: string | null }[]
   belongs_to_collection?: { id: number; name: string; poster_path: string | null; backdrop_path: string | null } | null
   credits?: { cast: TmdbCastMember[]; crew: TmdbCrewMember[] }
