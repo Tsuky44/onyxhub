@@ -7,6 +7,7 @@ import type {
   ArrRelease,
   DiskSpace,
   HealthCheck,
+  HistoryRecord,
   QualityProfile,
   QueueItem,
   RootFolder,
@@ -47,6 +48,8 @@ export interface Sonarr {
   deleteSeries(seriesId: number, deleteFiles: boolean): Promise<void>
   deleteEpisodeFile(episodeFileId: number): Promise<void>
   queue(): Promise<QueueItem[]>
+  /** L'historique d'un téléchargement (hash du torrent). */
+  history(downloadId: string): Promise<HistoryRecord[]>
   removeFromQueue(queueId: number, options: { blocklist?: boolean; removeFromClient?: boolean }): Promise<void>
   calendar(start: Date, end: Date): Promise<SonarrCalendarEpisode[]>
   releases(query: { episodeId: number } | { seriesId: number; seasonNumber: number }): Promise<ArrRelease[]>
@@ -146,6 +149,11 @@ export function createSonarr(config: ArrConfig): Sonarr {
         includeEpisode: true,
         includeUnknownSeriesItems: false,
       })
+      return Array.isArray(page) ? page : (page.records ?? [])
+    },
+    async history(downloadId) {
+      // Les *arr enregistrent le hash en majuscules.
+      const page = await api.get<{ records?: HistoryRecord[] } | HistoryRecord[]>('/history', { downloadId: downloadId.toUpperCase(), pageSize: 20 })
       return Array.isArray(page) ? page : (page.records ?? [])
     },
     async removeFromQueue(queueId, { blocklist = false, removeFromClient = true }) {

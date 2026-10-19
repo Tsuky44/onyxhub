@@ -70,3 +70,14 @@ export async function requireAdmin(): Promise<Viewer> {
 export function forgetToken(token: string): void {
   meCache.delete(createHash('sha256').update(token).digest('hex'))
 }
+
+/**
+ * Le compte admin d'une route API, ou la réponse d'erreur à renvoyer : une
+ * route ne redirige pas vers la connexion, elle répond 401 ou 403.
+ */
+export async function adminForRoute(): Promise<{ viewer: Viewer; denied: null } | { viewer: null; denied: Response }> {
+  const viewer = await getOptionalViewer().catch(() => null)
+  if (!viewer) return { viewer: null, denied: Response.json({ error: 'Connexion requise.' }, { status: 401 }) }
+  if (!viewer.isAdmin) return { viewer: null, denied: Response.json({ error: 'Réservé aux administrateurs.' }, { status: 403 }) }
+  return { viewer, denied: null }
+}

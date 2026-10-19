@@ -1,12 +1,13 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { RequestStatusBadge } from '@/components/media/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { cn } from '@/lib/cn'
-import { AutoSearchIcon, ExternalIcon, InteractiveSearchIcon, ManageIcon, TrashIcon } from '@/lib/icons'
+import { AutoSearchIcon, ExternalIcon, InteractiveSearchIcon, ManageIcon, SearchIcon, TrashIcon } from '@/lib/icons'
 import { formatRelative, formatSeasons } from '@/lib/requests/format'
 import type { MediaRequestView } from '@/lib/requests/media-page'
 import { AVAILABILITY_LABELS, type AvailabilityStatus } from '@/lib/requests/status'
@@ -83,6 +84,14 @@ export function AdminTools({
             Recherche interactive
           </Button>
         )}
+        {/* Hors Radarr/Sonarr (version introuvable, autre langue…) : la recherche libre dans tous les indexeurs. */}
+        <Link
+          href={`/telechargements/recherche?q=${encodeURIComponent(title)}`}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card px-4 text-subhead font-semibold text-text-secondary transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text"
+        >
+          <SearchIcon size={18} aria-hidden />
+          Prowlarr
+        </Link>
       </div>
       {!manageOpen && feedbackLine}
 

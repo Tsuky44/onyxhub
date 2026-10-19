@@ -13,7 +13,7 @@ export type RequestStatus = (typeof REQUEST_STATUSES)[number]
 export type AvailabilityStatus = 'unknown' | 'pending' | 'processing' | 'partial' | 'available'
 
 /** Le ton d'un badge : une couleur de la charte, rien d'autre. */
-export type StatusTone = 'success' | 'accent' | 'warning' | 'neutral'
+export type StatusTone = 'success' | 'accent' | 'warning' | 'neutral' | 'error'
 
 export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
   pending: 'En attente',

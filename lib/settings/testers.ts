@@ -5,6 +5,7 @@ import { createSonarr } from '../services/arr/sonarr'
 import { pingOnyx } from '../services/onyx/auth'
 import { createProwlarr } from '../services/prowlarr'
 import { createQbittorrent } from '../services/qbittorrent/client'
+import { testSmb } from '../services/smb/client'
 import { createTmdb } from '../services/tmdb/client'
 import type { ServiceId } from './registry'
 
@@ -57,6 +58,12 @@ const TESTERS: Partial<Record<ServiceId, (values: Values) => Promise<string>>> =
       { isolated: true },
     )
     return responds('qBittorrent', await qbit.version())
+  },
+  smb: async (values) => {
+    const host = values.smb_host?.trim()
+    const share = values.smb_share?.trim()
+    if (!host || !share) throw new ServiceError('SMB', "Il manque l'hôte ou le nom du partage")
+    return testSmb({ host, share, username: values.smb_username?.trim() ?? '', password: values.smb_password ?? '', rootPath: values.smb_root_path?.trim() ?? '' })
   },
 }
 

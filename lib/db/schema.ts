@@ -87,4 +87,29 @@ export const calendarSubscriptions = sqliteTable(
   (table) => [uniqueIndex('calendar_subscriptions_user_media_unique').on(table.userId, table.mediaType, table.tmdbId)],
 )
 
+/**
+ * Liens de partage publics vers un fichier ou un dossier du partage SMB.
+ * MediaHub gardait le mot de passe en clair et le comparait sans temps
+ * constant ; ici il est haché (scrypt) et le lien compte ses téléchargements.
+ */
+export const fileShares = sqliteTable(
+  'file_shares',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    /** Jeton aléatoire de l'URL publique (`/partage/<jeton>`). */
+    token: text('token').notNull(),
+    /** Relatif au dossier racine SMB, avec des `/`. */
+    path: text('path').notNull(),
+    kind: text('kind', { enum: ['file', 'folder'] }).notNull(),
+    /** `sel:empreinte` scrypt en hexadécimal, ou `null` sans mot de passe. */
+    passwordHash: text('password_hash'),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }),
+    createdBy: text('created_by').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    downloads: integer('downloads').notNull().default(0),
+    lastDownloadAt: integer('last_download_at', { mode: 'timestamp_ms' }),
+  },
+  (table) => [uniqueIndex('file_shares_token_unique').on(table.token)],
+)
+
 export type MediaRequestRow = typeof mediaRequests.$inferSelect

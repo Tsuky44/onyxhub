@@ -4,7 +4,7 @@ import { PanelSkeleton } from '@/components/ui/Panel'
 import { getViewer } from '@/lib/auth/viewer'
 import { greeting } from '@/lib/home/greeting'
 import { ArrStatus, Downloads, OnyxServer, OnyxStats, RequestsOverview } from './_home/AdminSections'
-import { AutoRefresh } from './_home/AutoRefresh'
+import { AutoRefresh } from '@/components/ui/AutoRefresh'
 import { ForYou, HomeSearch, MyRequests, UpcomingReleases } from './_home/UserSections'
 
 export const metadata: Metadata = { title: { absolute: 'OnyxHub' } }

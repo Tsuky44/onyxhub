@@ -157,3 +157,13 @@ body {
     display: none;
   }
 }
+
+/*
+ * Une ligne d'une longue liste (torrents) : hors de l'écran, le navigateur
+ * saute sa mise en page et son rendu. Sans bibliothèque de virtualisation,
+ * 1 000 torrents restent fluides.
+ */
+@utility lazy-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 96px;
+}

@@ -33,7 +33,9 @@ export function isPaused(torrent: Pick<Torrent, 'state'>): boolean {
   return PAUSED.has(torrent.state.toLowerCase())
 }
 
-export function matchesStatus(torrent: Torrent, filter: StatusFilter): boolean {
+type StatusFields = Pick<Torrent, 'state' | 'dlspeed' | 'upspeed' | 'progress'>
+
+export function matchesStatus(torrent: StatusFields, filter: StatusFilter): boolean {
   const state = torrent.state.toLowerCase()
   const moving = torrent.dlspeed > 0 || torrent.upspeed > 0
   switch (filter) {
@@ -60,12 +62,12 @@ export function matchesStatus(torrent: Torrent, filter: StatusFilter): boolean {
   }
 }
 
-export function filterByStatus(torrents: readonly Torrent[], filter: StatusFilter): Torrent[] {
+export function filterByStatus<T extends StatusFields>(torrents: readonly T[], filter: StatusFilter): T[] {
   return torrents.filter((torrent) => matchesStatus(torrent, filter))
 }
 
 /** Combien de torrents dans chaque filtre, pour les compteurs de la barre de statuts. */
-export function countByStatus(torrents: readonly Torrent[]): Record<StatusFilter, number> {
+export function countByStatus(torrents: readonly StatusFields[]): Record<StatusFilter, number> {
   const counts = Object.fromEntries(STATUS_FILTERS.map((filter) => [filter, 0])) as Record<StatusFilter, number>
   for (const torrent of torrents) for (const filter of STATUS_FILTERS) if (matchesStatus(torrent, filter)) counts[filter] += 1
   return counts

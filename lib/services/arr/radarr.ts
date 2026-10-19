@@ -2,7 +2,17 @@ import 'server-only'
 import { NotConfiguredError, normalizeBaseUrl, ServiceError } from '../../http'
 import { getSetting } from '../../settings/store'
 import { arrVersion, createArrClient, type ArrConfig } from './client'
-import type { ArrRelease, DiskSpace, HealthCheck, QualityProfile, QueueItem, RadarrCalendarMovie, RadarrMovie, RootFolder } from './types'
+import type {
+  ArrRelease,
+  DiskSpace,
+  HealthCheck,
+  HistoryRecord,
+  QualityProfile,
+  QueueItem,
+  RadarrCalendarMovie,
+  RadarrMovie,
+  RootFolder,
+} from './types'
 
 const SERVICE = 'Radarr'
 
@@ -32,6 +42,8 @@ export interface Radarr {
   requestMovie(tmdbId: number): Promise<MovieRequestOutcome>
   deleteMovie(movieId: number, deleteFiles: boolean): Promise<void>
   queue(): Promise<QueueItem[]>
+  /** L'historique d'un téléchargement (hash du torrent). */
+  history(downloadId: string): Promise<HistoryRecord[]>
   removeFromQueue(queueId: number, options: { blocklist?: boolean; removeFromClient?: boolean }): Promise<void>
   calendar(start: Date, end: Date): Promise<RadarrCalendarMovie[]>
   releases(movieId: number): Promise<ArrRelease[]>
@@ -99,6 +111,11 @@ export function createRadarr(config: ArrConfig): Radarr {
         includeMovie: true,
         includeUnknownMovieItems: false,
       })
+      return Array.isArray(page) ? page : (page.records ?? [])
+    },
+    async history(downloadId) {
+      // Les *arr enregistrent le hash en majuscules.
+      const page = await api.get<{ records?: HistoryRecord[] } | HistoryRecord[]>('/history', { downloadId: downloadId.toUpperCase(), pageSize: 20 })
       return Array.isArray(page) ? page : (page.records ?? [])
     },
     async removeFromQueue(queueId, { blocklist = false, removeFromClient = true }) {

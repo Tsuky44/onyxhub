@@ -143,6 +143,17 @@ export interface QueueItem {
   episode?: SonarrEpisode
 }
 
+/** Une ligne d'historique d'un *arr : retrouve le média d'un torrent déjà importé (la file l'a oublié). */
+export interface HistoryRecord {
+  id: number
+  eventType?: string
+  downloadId?: string
+  movieId?: number
+  seriesId?: number
+  episodeId?: number
+  episode?: { seasonNumber?: number }
+}
+
 /** Une release trouvée par la recherche interactive d'un *arr. */
 export interface ArrRelease {
   guid: string

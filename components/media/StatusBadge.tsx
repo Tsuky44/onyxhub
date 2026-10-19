@@ -14,6 +14,7 @@ const TONES: Record<StatusTone, string> = {
   accent: 'text-accent-muted',
   warning: 'text-warning',
   neutral: 'text-text-secondary',
+  error: 'text-error',
 }
 
 /**

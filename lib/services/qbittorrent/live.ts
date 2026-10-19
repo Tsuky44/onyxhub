@@ -84,23 +84,27 @@ export class QbitLive {
       this.key = key
       this.state = emptySyncState()
     }
+    const previousError = this.lastError
+    let changed = false
     if (!config) {
       this.lastError = 'qBittorrent n\'est pas configuré'
-      return this.state
+    } else {
+      try {
+        const data = await createQbittorrent(config).mainData(this.state.rid)
+        const applied = applyMainData(this.state, data)
+        this.state = applied.state
+        changed = applied.changed
+        this.failures = 0
+        this.lastError = null
+      } catch (error) {
+        this.failures += 1
+        this.lastError = error instanceof Error ? error.message : 'qBittorrent ne répond pas'
+        // Un `rid` peut devenir invalide (redémarrage de qBit) : on redemande un état complet.
+        this.state = { ...this.state, rid: 0 }
+      }
     }
-    try {
-      const data = await createQbittorrent(config).mainData(this.state.rid)
-      const { state, changed } = applyMainData(this.state, data)
-      this.state = state
-      this.failures = 0
-      this.lastError = null
-      if (changed) for (const listener of this.listeners) listener(state)
-    } catch (error) {
-      this.failures += 1
-      this.lastError = error instanceof Error ? error.message : 'qBittorrent ne répond pas'
-      // Un `rid` peut devenir invalide (redémarrage de qBit) : on redemande un état complet.
-      this.state = { ...this.state, rid: 0 }
-    }
+    // Une panne (ou son retour) se signale aussi : la page l'affiche sans attendre qu'un torrent change.
+    if (changed || this.lastError !== previousError) for (const listener of this.listeners) listener(this.state)
     return this.state
   }
 

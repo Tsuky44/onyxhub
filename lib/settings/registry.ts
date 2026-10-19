@@ -120,8 +120,8 @@ export const SERVICES = [
   {
     id: 'smb',
     label: 'Partage SMB',
-    description: 'Le gestionnaire de fichiers de Téléchargements. Le test de connexion arrive avec lui, en phase 6.',
-    testable: false,
+    description: 'Le gestionnaire de fichiers de Téléchargements : parcourir, télécharger, supprimer et partager par lien.',
+    testable: true,
     fields: [
       { key: 'smb_host', label: 'Hôte', kind: 'text', placeholder: '192.168.1.10' },
       { key: 'smb_share', label: 'Partage', kind: 'text', placeholder: 'data' },

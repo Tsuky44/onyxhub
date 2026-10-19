@@ -15,6 +15,9 @@ const PUBLIC_PREFIXES = [
   '/api/media/availability',
   // Webhooks Radarr/Sonarr (phase 3) : authentifiés par leur propre jeton.
   '/api/webhooks',
+  // Liens de partage de fichiers : le jeton (et le mot de passe éventuel) tient lieu d'accès.
+  '/partage',
+  '/api/partage',
 ]
 
 export function proxy(request: NextRequest) {

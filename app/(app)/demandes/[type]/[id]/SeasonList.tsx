@@ -86,11 +86,10 @@ function Season({
               {season.year ? ` · ${season.year}` : ''}
             </span>
           </span>
-          {season.status !== 'unknown' ? (
-            <AvailabilityBadge status={season.status} className="hidden sm:inline-flex" />
-          ) : season.requested ? (
-            <Badge label="Demandé" tone="warning" className="hidden sm:inline-flex" />
-          ) : null}
+          {/* Le badge porte son propre `inline-flex` : c'est l'enveloppe qui se masque sur téléphone. */}
+          <span className="hidden shrink-0 sm:inline-flex">
+            {season.status !== 'unknown' ? <AvailabilityBadge status={season.status} /> : season.requested ? <Badge label="Demandé" tone="warning" /> : null}
+          </span>
           <ChevronDownIcon size={18} aria-hidden className={cn('shrink-0 text-text-muted transition-transform duration-(--motion-standard) ease-onyx', open && 'rotate-180')} />
         </button>
         {canRequest && isRequestable(season) && (
