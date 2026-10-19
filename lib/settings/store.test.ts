@@ -1,9 +1,7 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-
-vi.mock('server-only', () => ({}))
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 beforeAll(() => {
   process.env.ONYXHUB_DATA_DIR = mkdtempSync(join(tmpdir(), 'onyxhub-test-'))
