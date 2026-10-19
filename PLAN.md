@@ -27,7 +27,7 @@
 
 ## 2. Architecture
 
-- **Next.js 16 (App Router, RSC d'abord) + TypeScript strict**, un seul process, une seule image Docker.
+- **Next.js 16 (App Router, RSC d'abord) + TypeScript strict**, un seul process (pas de Docker : décision du 2026-10-19).
 - **SQLite (better-sqlite3, WAL) + Drizzle** uniquement. Tables minimales : `settings` (secrets chiffrés), `media_requests`, `calendar_subscriptions`, `watch_later` (ou mappé sur les listes Onyx), `audit_log`.
 - **Tailwind v4** avec les tokens Onyx en variables CSS. Pas de lib UI lourde.
 - **TanStack Query** seulement là où c'est vivant (téléchargements, statut d'une demande). Le reste est rendu serveur.
@@ -96,7 +96,7 @@ URL et clé : Onyx, clé d'intégration, TMDB, Radarr, Sonarr, qBittorrent, Prow
 MediaHub : `next/image` (AVIF/WebP, cache 1 an) + proxy dont le cache est une `Map` en mémoire, perdu à chaque redémarrage.
 OnyxHub :
 - `next/image` avec `sizes` justes par breakpoint et la bonne taille TMDB (w185 / w342 / w500 / original) au lieu de w500 partout.
-- Proxy `/api/poster/[type]/[tmdbId]` avec **cache disque** (survit aux redémarrages), `ETag` + `Cache-Control: immutable`, résolution des chemins Radarr/Sonarr `mediacover` vers TMDB.
+- ~~Proxy `/api/poster/[type]/[tmdbId]`~~ : l'optimiseur de `next/image` sert de proxy avec cache disque (ADR-0007) ; les chemins Radarr/Sonarr `mediacover` sont traduits vers TMDB à la lecture.
 - Chargement paresseux, `priority` seulement au-dessus de la ligne de flottaison, squelette à ratio fixe (aucun saut de mise en page).
 
 ### qBittorrent
@@ -133,7 +133,7 @@ Dans `onyxhub/` :
 | 4 ✅ | Accueil utilisateur + résumé admin | les deux variantes affichent des données réelles |
 | 5 ✅ | Calendrier | sorties et abonnements visibles |
 | 6 ✅ | Téléchargements : qBit, Prowlarr, fichiers SMB + partage | parité avec la page Téléchargements de MediaHub (hors ratio des trackers) |
-| 7 | Passe perf posters, a11y, mobile | vérifié au navigateur en largeur téléphone et desktop |
-| 8 | Dockerfile, compose, bascule `mediahub_url` dans Onyx | Onyx tourne sur OnyxHub |
+| 7 ✅ | Passe perf posters, a11y, mobile | vérifié au navigateur en largeur téléphone et desktop |
+| 8 ✖ | ~~Dockerfile, compose~~ abandonnés (2026-10-19). Reste la bascule `mediahub_url` dans les réglages d'Onyx, à faire côté Onyx | Onyx tourne sur OnyxHub |
 
 Chaque phase se termine par lint + typecheck + tests verts et un passage dans le navigateur.

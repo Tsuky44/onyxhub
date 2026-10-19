@@ -78,7 +78,7 @@ export default async function FilesPage({ searchParams }: { searchParams: Promis
                     ) : (
                       <Link
                         href={crumb.path ? `/telechargements/fichiers?chemin=${encodeURIComponent(crumb.path)}` : '/telechargements/fichiers'}
-                        className="inline-flex min-h-10 items-center truncate text-text-secondary hover:text-text"
+                        className="inline-flex min-h-11 shell:min-h-10 items-center truncate text-text-secondary hover:text-text"
                       >
                         {crumb.name}
                       </Link>

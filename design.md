@@ -18,7 +18,7 @@ Poids visuel : 1) affiche 2) titre et statut 3) navigation 4) chrome décoratif 
 | Survol | `hover` | `#252525` |
 | Bordure | `border` / `glass-border` | `#2C2C2E` / blanc 8 % |
 | Accent (focus, sélection, progression, liens) | `accent` | `#0A84FF`, ≤ 5 % de la surface |
-| Texte | `text` / `text-secondary` / `text-muted` | `#F5F5F7` / `#A1A1A6` / `#6E6E73` |
+| Texte | `text` / `text-secondary` / `text-muted` | `#F5F5F7` / `#A1A1A6` / `#8E8E93` (≠ Onyx `#6E6E73`, ADR-0006) |
 | États | `success` / `warning` / `error` | `#30D158` / `#FF9F0A` / `#FF453A` |
 | Étoiles des notes | `rating` | `#F5C518`, rien d'autre |
 

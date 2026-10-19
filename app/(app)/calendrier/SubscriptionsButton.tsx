@@ -48,7 +48,7 @@ export function SubscriptionsButton({ subscriptions }: { subscriptions: Subscrip
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button variant="secondary" onClick={() => setOpen(true)} aria-label={`Abonnements (${subscriptions.length})`}>
         <SubscribedIcon size={18} aria-hidden />
         Abonnements
         <span className="font-mono text-text-secondary">{subscriptions.length}</span>

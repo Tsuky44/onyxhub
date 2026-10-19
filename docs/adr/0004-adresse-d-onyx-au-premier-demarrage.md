@@ -6,7 +6,7 @@
 
 ## Contexte
 
-Les comptes viennent d'Onyx (ADR-0001), donc se connecter suppose de connaître l'adresse d'Onyx. Une variable `ONYX_URL` règle le cas Docker, mais un premier lancement sans elle laisserait OnyxHub sans aucun moyen d'être configuré : la page Réglages exige un admin, et un admin exige Onyx.
+Les comptes viennent d'Onyx (ADR-0001), donc se connecter suppose de connaître l'adresse d'Onyx. Une variable `ONYX_URL` règle le cas d'un déploiement scripté, mais un premier lancement sans elle laisserait OnyxHub sans aucun moyen d'être configuré : la page Réglages exige un admin, et un admin exige Onyx.
 
 ## Décision
 
@@ -16,5 +16,5 @@ Les comptes viennent d'Onyx (ADR-0001), donc se connecter suppose de connaître 
 
 ## Conséquences
 
-- Pendant la toute première minute, avant que le propriétaire ne se connecte, quelqu'un sur le réseau pourrait pointer OnyxHub vers un autre serveur Onyx. Le risque est borné (un OnyxHub vide, sans clé ni service branché) et disparaît avec `ONYX_URL`, que `.env.example` et le compose (phase 8) recommandent.
+- Pendant la toute première minute, avant que le propriétaire ne se connecte, quelqu'un sur le réseau pourrait pointer OnyxHub vers un autre serveur Onyx. Le risque est borné (un OnyxHub vide, sans clé ni service branché) et disparaît avec `ONYX_URL`, que `.env.example` recommande.
 - Une adresse fausse enregistrée par Réglages est impossible : elle aurait déconnecté tout le monde, admin compris.

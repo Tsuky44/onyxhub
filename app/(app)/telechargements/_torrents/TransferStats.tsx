@@ -16,7 +16,7 @@ const CONNECTION: Record<string, { label: string; tone?: 'success' | 'warning' |
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="flex min-w-0 flex-col gap-3 rounded-panel border border-glass-border bg-surface p-4">
+    <section className="flex w-[85%] min-w-0 shrink-0 snap-start flex-col gap-3 rounded-panel border border-glass-border bg-surface p-4 md:w-auto">
       <div className="flex min-h-6 items-center justify-between gap-2">
         <h2 className="text-footnote font-semibold text-text-secondary">{title}</h2>
         {action}
@@ -70,7 +70,8 @@ export function TransferStats({ server, torrents }: { server: ServerState; torre
   const ratio = Number.parseFloat(server.global_ratio ?? '')
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    // Sur téléphone, les trois cartes défilent de côté : les débits restent visibles sans pousser la liste d'un écran.
+    <div className="scrollbar-none -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
       <Card title="Débits">
         <Stat
           label="Réception"
@@ -99,7 +100,7 @@ export function TransferStats({ server, torrents }: { server: ServerState; torre
           <button
             type="button"
             onClick={() => setSessionOpen(true)}
-            className="-my-2 inline-flex min-h-10 items-center gap-1 text-footnote font-medium text-text-secondary hover:text-text"
+            className="-my-2 inline-flex min-h-11 shell:min-h-10 items-center gap-1 text-footnote font-medium text-text-secondary hover:text-text"
           >
             Par tracker
             <ChevronRightIcon size={12} aria-hidden />

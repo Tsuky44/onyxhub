@@ -10,7 +10,7 @@ const TYPES: { id: CalendarType; label: string }[] = [
   { id: 'serie', label: 'Séries' },
 ]
 
-const linkBase = 'inline-flex min-h-10 items-center rounded-full text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx'
+const linkBase = 'inline-flex min-h-11 shell:min-h-10 items-center rounded-full text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx'
 
 function Segment({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
   return (
@@ -30,7 +30,7 @@ function Segment({ href, active, children }: { href: string; active: boolean; ch
  */
 export function CalendarToolbar({ query, range, today }: { query: CalendarQuery; range: CalendarRange; today: string }) {
   const unit = query.view === 'semaine' ? 'Semaine' : 'Mois'
-  const navButton = 'flex size-10 items-center justify-center rounded-full text-text-secondary transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
+  const navButton = 'flex size-11 shell:size-10 items-center justify-center rounded-full text-text-secondary transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
   return (
     <div className="mb-6 flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">

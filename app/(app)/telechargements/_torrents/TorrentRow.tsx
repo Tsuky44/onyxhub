@@ -25,7 +25,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 }
 
 const iconButton =
-  'flex size-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
+  'flex size-11 shell:size-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
 
 /**
  * Une ligne de la liste : mémoïsée, elle ne se redessine que si son torrent

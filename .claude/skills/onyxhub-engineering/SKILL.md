@@ -53,7 +53,7 @@ TypeScript strict avec `noUncheckedIndexedAccess`. `any` est refusé par ESLint.
 ### Budgets
 
 - Rendu serveur d'abord. `'use client'` seulement pour ce qui a de l'état, des événements ou du temps réel, et au plus bas de l'arbre.
-- Une seule image Docker, un seul process. Les tâches de fond (poller qBit, poller de disponibilité) s'arrêtent quand personne n'en a besoin.
+- Un seul process (pas de Docker). Les tâches de fond (poller qBit, poller de disponibilité) s'arrêtent quand personne n'en a besoin.
 - Une nouvelle dépendance se justifie dans le message de commit : ce qu'elle apporte que vingt lignes ne feraient pas.
 
 ### Portée

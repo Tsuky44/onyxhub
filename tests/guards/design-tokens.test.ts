@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { offendingLines, sourceFiles } from './source-files'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { offendingLines, ROOT, sourceFiles } from './source-files'
 
 /**
  * La charte Quiet Premium vit dans app/globals.css (@theme). Ces tests
@@ -35,5 +37,12 @@ describe('tokens de design', () => {
     const pattern = /\bduration-(?:\d|\[)|\btransition(?:Duration)?\s*:\s*['"`][^'"`]*\d+m?s/
     const found = code.flatMap((file) => offendingLines(file, pattern))
     expect(found, 'Utilise duration-(--motion-micro|standard|emphasis)').toEqual([])
+  })
+
+  it('déclare les points de rupture en rem, comme ceux de Tailwind', () => {
+    // En px, Tailwind ne sait pas ranger un point de rupture parmi les siens : `sm:` passait après `shell:` et l'écrasait.
+    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8')
+    const found = css.split('\n').filter((line) => /--breakpoint-[\w-]+:\s*[\d.]+px/.test(line))
+    expect(found, 'Écris le point de rupture en rem (900px = 56.25rem)').toEqual([])
   })
 })

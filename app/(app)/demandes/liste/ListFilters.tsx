@@ -63,7 +63,7 @@ export function ListFilters({ search }: { search: string }) {
                 setQuery('')
                 set('q', '', true)
               }}
-              className="absolute top-1/2 right-1 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-text-muted hover:text-text"
+              className="absolute top-1/2 right-1 flex size-11 shell:size-10 -translate-y-1/2 items-center justify-center rounded-full text-text-muted hover:text-text"
             >
               <CloseIcon size={16} aria-hidden />
             </button>

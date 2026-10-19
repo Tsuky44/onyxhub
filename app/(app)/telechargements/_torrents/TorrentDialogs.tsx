@@ -82,7 +82,7 @@ export function AddTorrentDialog({ open, onClose, categories, onDone }: { open: 
             type="file"
             accept=".torrent,application/x-bittorrent"
             multiple
-            className="text-subhead text-text-secondary file:mr-3 file:min-h-10 file:rounded-card file:border file:border-glass-border file:bg-glass-fill file:px-3 file:text-subhead file:font-semibold file:text-text"
+            className="text-subhead text-text-secondary file:mr-3 file:min-h-11 file:rounded-card file:border file:border-glass-border file:bg-glass-fill file:px-3 file:text-subhead file:font-semibold file:text-text"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

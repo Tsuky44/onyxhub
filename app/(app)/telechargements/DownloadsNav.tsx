@@ -17,7 +17,7 @@ export function DownloadsNav({ current }: { current: (typeof TABS)[number]['id']
           href={tab.href}
           aria-current={current === tab.id ? 'page' : undefined}
           className={cn(
-            'inline-flex min-h-10 items-center rounded-full px-4 text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx',
+            'inline-flex min-h-11 shell:min-h-10 items-center rounded-full px-4 text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx',
             current === tab.id ? 'bg-elevated font-semibold text-text' : 'font-medium text-text-secondary hover:text-text',
           )}
         >

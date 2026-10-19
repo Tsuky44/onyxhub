@@ -109,7 +109,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Sea
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'inline-flex min-h-10 items-center rounded-full px-3.5 text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx',
+                  'inline-flex min-h-11 shell:min-h-10 items-center rounded-full px-3.5 text-subhead whitespace-nowrap transition-colors duration-(--motion-micro) ease-onyx',
                   active ? 'bg-elevated font-semibold text-text' : 'font-medium text-text-secondary hover:text-text',
                 )}
               >

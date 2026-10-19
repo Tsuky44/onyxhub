@@ -1,8 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Une seule image Docker, sans node_modules complet (phase 8).
-  output: 'standalone',
   poweredByHeader: false,
   // Les fichiers .torrent passent par une server action : 1 Mo par défaut ne suffit pas à un gros pack.
   experimental: { serverActions: { bodySizeLimit: '10mb' } },

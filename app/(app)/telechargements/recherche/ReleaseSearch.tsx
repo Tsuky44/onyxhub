@@ -62,7 +62,7 @@ function ResultRow({
             target="_blank"
             rel="noreferrer noopener"
             aria-label={`Page de ${release.title} chez ${release.indexer}`}
-            className="flex size-10 items-center justify-center rounded-full text-text-muted hover:bg-glass-fill hover:text-text"
+            className="flex size-11 shell:size-10 items-center justify-center rounded-full text-text-muted hover:bg-glass-fill hover:text-text"
           >
             <ExternalIcon size={18} aria-hidden />
           </a>
@@ -175,7 +175,7 @@ export function ReleaseSearch({ indexers, categories, initialQuery }: { indexers
         </div>
         {indexers.length > 1 && (
           <details className="group">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 text-footnote font-medium text-text-secondary hover:text-text">
+            <summary className="flex min-h-11 shell:min-h-10 cursor-pointer list-none items-center gap-2 text-footnote font-medium text-text-secondary hover:text-text">
               Indexeurs
               <span className="font-mono text-text-muted">{chosenIndexers.length > 0 ? `${chosenIndexers.length}/${indexers.length}` : 'tous'}</span>
             </summary>

@@ -72,7 +72,7 @@ export function MonthView({ days, month, today, releases }: { days: string[]; mo
                   aria-hidden
                   className={cn(
                     'pointer-events-none relative flex size-7 items-center justify-center rounded-full text-footnote',
-                    day === today ? 'bg-accent font-semibold text-on-accent' : outside ? 'text-text-muted' : 'font-medium text-text-secondary',
+                    day === today ? 'bg-accent-muted font-semibold text-on-primary' : outside ? 'text-text-muted' : 'font-medium text-text-secondary',
                   )}
                 >
                   {dayNumber(day)}

@@ -189,7 +189,7 @@ export function SharesButton({ shares }: { shares: ShareView[] }) {
   const active = shares.filter((share) => !share.expired).length
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button variant="secondary" onClick={() => setOpen(true)} aria-label={`Liens de partage (${active} actifs)`}>
         Liens
         <span className="font-mono text-text-secondary">{active}</span>
       </Button>

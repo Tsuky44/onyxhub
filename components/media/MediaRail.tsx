@@ -30,7 +30,7 @@ export function MediaRail({ title, href, items }: { title: string; href?: string
     <Rail title={title} href={href}>
       {items.map((item) => (
         <div key={`${item.mediaType}:${item.tmdbId}`} className="w-32 shrink-0 snap-start shell:w-40">
-          <MediaCard item={item} sizes="160px" />
+          <MediaCard item={item} sizes="(min-width: 900px) 160px, 128px" />
         </div>
       ))}
     </Rail>

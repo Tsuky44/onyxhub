@@ -96,7 +96,7 @@ export default async function MediaPage({ params }: { params: Params }) {
         </div>
 
         <div className="relative flex flex-col gap-6 px-5 pt-28 pb-6 shell:flex-row shell:items-end shell:gap-10 shell:px-12 shell:pt-40 xl:px-20">
-          <Poster path={media.poster_path} title={title} sizes="(min-width: 900px) 240px, 160px" source="w780" priority className="w-40 shrink-0 border border-glass-border shadow-float shell:w-60" />
+          <Poster path={media.poster_path} title={title} sizes="(min-width: 900px) 240px, 160px" source="w500" priority className="w-40 shrink-0 border border-glass-border shadow-float shell:w-60" />
 
           <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">

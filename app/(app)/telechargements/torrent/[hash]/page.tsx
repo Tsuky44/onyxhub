@@ -58,7 +58,7 @@ export default async function TorrentPage({ params }: { params: Promise<{ hash: 
         <TorrentActions hash={torrent.hash} name={torrent.name} paused={paused} queued={torrent.priority > 0} />
         <Link
           href={`/telechargements/recherche?q=${encodeURIComponent(torrent.name.replace(/\.(mkv|mp4|avi)$/i, '').replace(/[._]+/g, ' '))}`}
-          className="inline-flex min-h-10 items-center gap-1.5 self-start text-footnote font-medium text-text-secondary hover:text-text"
+          className="inline-flex min-h-11 shell:min-h-10 items-center gap-1.5 self-start text-footnote font-medium text-text-secondary hover:text-text"
         >
           <SearchIcon size={14} aria-hidden />
           Chercher d’autres sources dans Prowlarr

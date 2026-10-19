@@ -55,7 +55,7 @@ export function SearchBox({ search }: { search: string }) {
             go('')
           }}
           aria-label="Effacer la recherche"
-          className="absolute top-1/2 right-1 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-text-muted hover:text-text"
+          className="absolute top-1/2 right-1 flex size-11 shell:size-10 -translate-y-1/2 items-center justify-center rounded-full text-text-muted hover:text-text"
         >
           <CloseIcon size={16} aria-hidden />
         </button>

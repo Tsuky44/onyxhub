@@ -9,7 +9,7 @@ import { mediaHref } from '@/lib/requests/format'
 function WeekItem({ release }: { release: UpcomingRelease }) {
   const content = (
     <>
-      <Poster path={release.posterPath} title={release.title} sizes="40px" source="w185" compact className="w-10 shrink-0 md:w-full" />
+      <Poster path={release.posterPath} title={release.title} sizes="(min-width: 768px) 160px, 40px" source="w342" compact className="w-10 shrink-0 md:w-full" />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="line-clamp-2 text-subhead font-semibold text-text">{release.title}</span>
         <span className="truncate text-footnote text-text-muted">{releaseSubtitle(release)}</span>

@@ -158,7 +158,7 @@ export function FilterPanel({
                 update({ watchRegion: next, watchProviders: undefined })
                 startProviders(async () => setProviders(await loadWatchProviders(providerType, next)))
               }}
-              className="min-h-10 rounded-card border border-border bg-elevated px-3 text-body text-text outline-none focus:border-accent"
+              className="min-h-11 shell:min-h-10 rounded-card border border-border bg-elevated px-3 text-body text-text outline-none focus:border-accent"
             >
               {REGIONS.map((option) => (
                 <option key={option.value} value={option.value}>

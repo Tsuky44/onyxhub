@@ -216,7 +216,7 @@ export function TorrentManager() {
           </div>
 
           <div className="flex min-h-6 flex-wrap items-center justify-between gap-2 text-footnote text-text-secondary">
-            <label className="flex min-h-10 items-center gap-2">
+            <label className="flex min-h-11 shell:min-h-10 items-center gap-2">
               <input
                 type="checkbox"
                 checked={allVisibleSelected}

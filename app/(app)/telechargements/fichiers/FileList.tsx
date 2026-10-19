@@ -15,7 +15,7 @@ import { ShareDialog } from './ShareDialogs'
 const DATE = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
 const iconButton =
-  'flex size-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
+  'flex size-11 shell:size-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text'
 
 const folderHref = (path: string) => (path ? `/telechargements/fichiers?chemin=${encodeURIComponent(path)}` : '/telechargements/fichiers')
 
