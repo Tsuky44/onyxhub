@@ -49,6 +49,15 @@ describe('qBittorrent', () => {
     expect(calls.find((call) => call.url.endsWith('/app/version'))!.headers.get('Cookie')).toBe('SID=abc123')
   })
 
+  it('renvoie le cookie de session de qBit 5, nommé QBT_SID_<port>', async () => {
+    const { calls } = mockFetch([
+      { ...loginOk, headers: { 'set-cookie': 'QBT_SID_8080=abc123; HttpOnly; path=/' } },
+      { match: /\/app\/version/, body: 'v5.1.2' },
+    ])
+    await createQbittorrent(config).version()
+    expect(calls.find((call) => call.url.endsWith('/app/version'))!.headers.get('Cookie')).toBe('QBT_SID_8080=abc123')
+  })
+
   it('refuse des identifiants faux renvoyés en 401 par les qBit récents', async () => {
     mockFetch([{ method: 'POST', match: /\/auth\/login$/, status: 401, body: 'Unauthorized' }])
     await expect(createQbittorrent(config).version()).rejects.toThrow('identifiants refusés')

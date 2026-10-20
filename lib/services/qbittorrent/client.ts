@@ -124,7 +124,9 @@ export function createQbittorrent(config: QbitConfig, { isolated = false }: { is
         if (body === 'Fails.') throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés')
         if (body !== 'Ok.' && body !== '') throw new ServiceError(SERVICE, "qBittorrent : réponse inattendue à la connexion, vérifie que l'URL pointe bien sur qBittorrent")
         // Pas de cookie quand qBit dispense ce réseau d'authentification : les appels passent sans.
-        session.sid = response.headers.get('set-cookie')?.match(/SID=[^;]+/)?.[0] ?? null
+        // qBit 5 nomme le cookie `QBT_SID_<port>` (`SID` avant) : chercher `SID=` le manquait, et chaque appel suivant prenait un 403.
+        const cookies = response.headers.getSetCookie().map((cookie) => cookie.split(';')[0]!.trim())
+        session.sid = cookies.find((cookie) => /^[^=]*SID[^=]*=/.test(cookie)) ?? null
         session.loggedIn = true
       } finally {
         session.login = null

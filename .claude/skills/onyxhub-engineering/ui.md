@@ -1,6 +1,6 @@
 # Interface
 
-La direction est celle d'Onyx, **Quiet Premium** : une scène charbon OLED, un accent bleu utilisé avec parcimonie, un mouvement bref. L'affiche du média porte l'émotion, le chrome s'efface.
+La direction est celle d'Onyx, **Quiet Premium** : une scène ardoise (charbon éclairci, ADR-0008), un accent bleu utilisé avec parcimonie, un mouvement bref. L'affiche du média porte l'émotion, le chrome s'efface.
 
 ## Sources de vérité
 
@@ -34,6 +34,6 @@ Un composant utilisé par une deuxième page monte dans `components/ui/`.
 
 - **Trois états** pour toute donnée asynchrone : chargement (squelette au ratio final), vide, erreur avec une action pour réessayer.
 - **Serveur d'abord** : un composant n'est client que s'il a de l'état ou des événements ; on pousse la frontière `'use client'` au plus bas.
-- **Accessibilité** : bouton-icône avec `aria-label`, cibles ≥ 44 px sur mobile, focus visible (anneau accent 2 px global), `aria-current` sur l'onglet actif, contraste lisible sur charbon.
+- **Accessibilité** : bouton-icône avec `aria-label`, cibles ≥ 44 px sur mobile, focus visible (anneau accent 2 px global), `aria-current` sur l'onglet actif, contraste lisible sur ardoise.
 - **Textes** : français, en phrases, courts, tutoiement comme Onyx. Un message d'erreur dit ce qui s'est passé et quoi faire.
 - **Vérification** : `pnpm dev`, puis la page en largeur téléphone (375 px) et desktop (≥ 1280 px), et sous « réduire les animations » si tu as ajouté du mouvement.

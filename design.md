@@ -4,7 +4,7 @@ Repris de `PROJECT_DESIGN.md` d'Onyx (`../project playeur`), qui reste la réfé
 
 ## Thèse
 
-Une scène charbon OLED, des affiches pour seul spectacle, du verre seulement là où il sert (nav, menus, modales). Calme, confiance, jamais flashy.
+Une scène ardoise (charbon éclairci, ADR-0008), des affiches pour seul spectacle, du verre seulement là où il sert (nav, menus, modales). Calme, confiance, jamais flashy.
 
 Poids visuel : 1) affiche 2) titre et statut 3) navigation 4) chrome décoratif (quasi zéro).
 
@@ -12,14 +12,14 @@ Poids visuel : 1) affiche 2) titre et statut 3) navigation 4) chrome décoratif 
 
 | Rôle | Token | Valeur |
 |---|---|---|
-| Fond | `bg` | `#0A0A0A` |
-| Surface | `surface` | `#141414` |
-| Surface élevée | `elevated` | `#1C1C1C` |
-| Survol | `hover` | `#252525` |
-| Bordure | `border` / `glass-border` | `#2C2C2E` / blanc 8 % |
+| Fond | `bg` | `#1C1D22` (≠ Onyx `#0A0A0A`, ADR-0008) |
+| Surface | `surface` | `#25262D` |
+| Surface élevée | `elevated` | `#2E3038` |
+| Survol | `hover` | `#383A43` |
+| Bordure | `border` / `glass-border` | `#41434D` / blanc 8 % |
 | Accent (focus, sélection, progression, liens) | `accent` | `#0A84FF`, ≤ 5 % de la surface |
-| Texte | `text` / `text-secondary` / `text-muted` | `#F5F5F7` / `#A1A1A6` / `#8E8E93` (≠ Onyx `#6E6E73`, ADR-0006) |
-| États | `success` / `warning` / `error` | `#30D158` / `#FF9F0A` / `#FF453A` |
+| Texte | `text` / `text-secondary` / `text-muted` | `#F5F5F7` / `#B0B0B8` / `#9C9CA4` (≠ Onyx, ADR-0006 et ADR-0008) |
+| États | `success` / `warning` / `error` | `#30D158` / `#FF9F0A` / `#FF6961` |
 | Étoiles des notes | `rating` | `#F5C518`, rien d'autre |
 
 Interdits : le rouge `#E50914`, les dégradés violets, le néon.
