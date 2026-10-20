@@ -13,6 +13,8 @@ const PUBLIC_PREFIXES = [
   // Routes appelées par le serveur Onyx : elles exigent la clé d'intégration (ADR-0002).
   '/api/request',
   '/api/media/availability',
+  // Le bouton « Tester » d'Onyx : même clé (ADR-0009).
+  '/api/integration/ping',
   // Webhooks Radarr/Sonarr (phase 3) : authentifiés par leur propre jeton.
   '/api/webhooks',
   // Liens de partage de fichiers : le jeton (et le mot de passe éventuel) tient lieu d'accès.

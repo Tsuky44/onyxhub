@@ -1,8 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { readSession } from '@/lib/auth/session'
 import { requireAdmin } from '@/lib/auth/viewer'
 import { randomToken } from '@/lib/crypto'
+import { linkOnyx } from '@/lib/integration/onyx-link'
+import { requestOrigin } from '@/lib/request-origin'
 import { parseServiceForm } from '@/lib/settings/form'
 import { findService, type ServiceId, type SettingKey } from '@/lib/settings/registry'
 import { getSetting, setSettings, snapshotService } from '@/lib/settings/store'
@@ -28,7 +31,7 @@ function valuesForTest(serviceId: ServiceId, updates: Record<string, string>): V
 
 /**
  * Une seule action par carte de service ; le bouton cliqué dit l'intention
- * (`intent` = test, save, clear ou generate). Chaque appel revérifie le droit
+ * (`intent` = test, save, clear, generate ou link). Chaque appel revérifie le droit
  * admin : être appelée depuis la page Réglages ne prouve rien.
  */
 export async function serviceAction(serviceId: ServiceId, _previous: ServiceFormState, form: FormData): Promise<ServiceFormState> {
@@ -60,6 +63,17 @@ export async function serviceAction(serviceId: ServiceId, _previous: ServiceForm
 
   const { updates, errors } = parseServiceForm(service, form, locked)
   if (Object.keys(errors).length > 0) return { kind: 'invalid', errors }
+
+  if (intent === 'link') {
+    if (!service.linksOnyx) return { kind: 'error', message: 'Action inconnue.' }
+    // L'adresse saisie compte tout de suite : on l'enregistre avant de l'écrire dans Onyx.
+    setSettings(updates)
+    const session = await readSession()
+    if (!session) return { kind: 'error', message: 'Session expirée, reconnecte-toi.' }
+    const outcome = await linkOnyx(session.token, await requestOrigin())
+    revalidatePath('/reglages')
+    return { kind: 'tested', ...outcome }
+  }
 
   if (intent === 'test') {
     const result = await testService(serviceId, valuesForTest(serviceId, updates))

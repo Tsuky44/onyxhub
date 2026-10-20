@@ -134,6 +134,6 @@ Dans `onyxhub/` :
 | 5 ✅ | Calendrier | sorties et abonnements visibles |
 | 6 ✅ | Téléchargements : qBit, Prowlarr, fichiers SMB + partage | parité avec la page Téléchargements de MediaHub (hors ratio des trackers) |
 | 7 ✅ | Passe perf posters, a11y, mobile | vérifié au navigateur en largeur téléphone et desktop |
-| 8 ✅ | Dockerfile, compose (volumes `/data` et cache d'affiches, PUID/PGID), CI GitHub (tests + image GHCR amd64/arm64) ; reste la bascule `mediahub_url` dans les réglages d'Onyx | `docker compose up` sert OnyxHub ; Onyx tourne sur OnyxHub |
+| 8 ✅ | Dockerfile, compose (volumes `/data` et cache d'affiches, PUID/PGID), CI GitHub (tests + image GHCR amd64/arm64) ; la bascule `mediahub_url` se fait par « Connecter Onyx » dans Réglages (ADR-0009) | `docker compose up` sert OnyxHub ; Onyx tourne sur OnyxHub |
 
 Chaque phase se termine par lint + typecheck + tests verts et un passage dans le navigateur.

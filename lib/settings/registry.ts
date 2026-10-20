@@ -32,6 +32,8 @@ export interface ServiceDefinition {
   testable: boolean
   /** Le secret que le bouton « Générer » remplit (clé d'intégration, secret des webhooks). */
   generates?: string
+  /** Le bouton « Connecter Onyx » écrit ces réglages dans Onyx (ADR-0009). */
+  linksOnyx?: boolean
 }
 
 export const SERVICES = [
@@ -44,11 +46,24 @@ export const SERVICES = [
   },
   {
     id: 'integration',
-    label: 'Clé d\'intégration',
-    description: 'La clé que le serveur Onyx présente pour envoyer les demandes faites dans l\'app. Dans les réglages d\'Onyx, mets l\'URL d\'OnyxHub dans « Adresse MediaHub » et cette clé dans « Clé API MediaHub ».',
+    label: 'Liaison avec Onyx',
+    description:
+      'Le serveur Onyx joint OnyxHub avec cette adresse et cette clé pour envoyer les demandes faites dans l\'app et afficher les disponibilités. « Connecter Onyx » les écrit dans les réglages d\'Onyx, puis vérifie qu\'Onyx joint bien OnyxHub.',
     testable: false,
     generates: 'integration_api_key',
-    fields: [{ key: 'integration_api_key', label: 'Clé', kind: 'secret', env: 'ONYXHUB_INTEGRATION_KEY' }],
+    linksOnyx: true,
+    fields: [
+      {
+        key: 'onyxhub_url',
+        label: 'Adresse d\'OnyxHub vue par Onyx',
+        kind: 'url',
+        optional: true,
+        env: 'ONYXHUB_URL',
+        placeholder: 'http://192.168.1.10:4400',
+        help: 'Vide : l\'adresse de ce navigateur. À remplir si Onyx joint OnyxHub autrement (nom Docker, réseau interne).',
+      },
+      { key: 'integration_api_key', label: 'Clé', kind: 'secret', env: 'ONYXHUB_INTEGRATION_KEY', help: 'Créée par « Connecter Onyx » si elle manque.' },
+    ],
   },
   {
     id: 'webhooks',

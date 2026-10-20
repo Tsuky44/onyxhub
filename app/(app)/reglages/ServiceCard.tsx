@@ -23,7 +23,16 @@ function initialValues(snapshots: FieldSnapshot[]): Record<string, string> {
  * non contrôlé après chaque action, et « Tester » effacerait alors ce qu'on
  * vient de saisir avant d'avoir pu l'enregistrer.
  */
-export function ServiceCard({ serviceId, snapshots }: { serviceId: ServiceId; snapshots: FieldSnapshot[] }) {
+export function ServiceCard({
+  serviceId,
+  snapshots,
+  note,
+}: {
+  serviceId: ServiceId
+  snapshots: FieldSnapshot[]
+  /** Un état lu ailleurs que dans OnyxHub (la liaison vue depuis Onyx). */
+  note?: { good: boolean; text: string }
+}) {
   const service = findService(serviceId)
   const [values, setValues] = useState(() => initialValues(snapshots))
   const [state, formAction, pending] = useActionState(async (previous: ServiceFormState, form: FormData) => {
@@ -56,6 +65,7 @@ export function ServiceCard({ serviceId, snapshots }: { serviceId: ServiceId; sn
               {service.label}
             </h2>
             <p className="mt-1 max-w-xl text-subhead text-pretty text-text-secondary">{service.description}</p>
+            {note && <Notice good={note.good} message={note.text} />}
           </div>
           <StatusPill status={status} />
         </header>
@@ -99,13 +109,25 @@ export function ServiceCard({ serviceId, snapshots }: { serviceId: ServiceId; sn
           <Feedback state={state} />
           {/*
             Ordre inversé dans le DOM : la touche Entrée déclenche le premier
-            bouton d'envoi du formulaire, qui doit être « Enregistrer » et pas
-            « Retirer ». L'ordre visuel reste Retirer · Tester · Enregistrer.
+            bouton d'envoi du formulaire, qui doit être « Enregistrer » (ou
+            « Connecter Onyx », qui enregistre aussi) et pas « Retirer ».
+            L'ordre visuel reste Retirer · Tester · Enregistrer.
           */}
           <div className="ml-auto flex flex-row-reverse flex-wrap gap-2">
-            <Button type="submit" name="intent" value="save" pending={pending}>
-              Enregistrer
-            </Button>
+            {service.linksOnyx ? (
+              <>
+                <Button type="submit" name="intent" value="link" pending={pending}>
+                  Connecter Onyx
+                </Button>
+                <Button type="submit" name="intent" value="save" variant="secondary" disabled={pending}>
+                  Enregistrer
+                </Button>
+              </>
+            ) : (
+              <Button type="submit" name="intent" value="save" pending={pending}>
+                Enregistrer
+              </Button>
+            )}
             {service.testable && (
               <Button type="submit" name="intent" value="test" variant="secondary" disabled={pending}>
                 Tester
@@ -141,10 +163,17 @@ function Feedback({ state }: { state: ServiceFormState }) {
   if (state.kind === 'idle' || state.kind === 'generated') return <span />
   const good = state.kind === 'saved' || (state.kind === 'tested' && state.ok)
   const message = state.kind === 'invalid' ? 'Corrige les champs signalés.' : state.message
+  return <Notice good={good} message={message} live />
+}
+
+function Notice({ good, message, live = false }: { good: boolean; message: string; live?: boolean }) {
   const Icon = good ? SuccessIcon : WarningIcon
   return (
-    <p role="status" className={cn('flex min-w-0 items-center gap-1.5 text-subhead', good ? 'text-success' : 'text-error')}>
-      <Icon size={18} weight="fill" aria-hidden className="shrink-0" />
+    <p
+      role={live ? 'status' : undefined}
+      className={cn('flex min-w-0 items-start gap-1.5 text-subhead', live ? undefined : 'mt-3', good ? 'text-success' : live ? 'text-error' : 'text-warning')}
+    >
+      <Icon size={18} weight="fill" aria-hidden className="mt-0.5 shrink-0" />
       <span className="min-w-0">{message}</span>
     </p>
   )

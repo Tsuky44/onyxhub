@@ -48,7 +48,7 @@ export function GeneratedKey({ serviceId, value }: { serviceId: string; value: s
       <p className="mt-1 text-footnote text-text-secondary">
         {webhooks
           ? 'Colle ces URL dans Radarr et Sonarr (Réglages → Connexions → Webhook). Les anciennes ne marchent plus.'
-          : 'Colle-la dans Onyx, champ « Clé API MediaHub ». L\'ancienne clé ne marche plus.'}
+          : 'Onyx utilise encore l\'ancienne, qui ne marche plus : clique « Connecter Onyx » pour lui transmettre celle-ci.'}
       </p>
       {webhooks ? (
         <>
