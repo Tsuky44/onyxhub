@@ -75,7 +75,7 @@ export async function onArrEvent(event: {
 
 function importedRow(fields: Pick<NewRequest, 'mediaType' | 'tmdbId' | 'title' | 'posterPath'>, batchId: string, added: string | undefined): Omit<NewRequest, 'seasonNumber' | 'tvdbId'> {
   const requestedAt = added ? new Date(added) : new Date()
-  return { ...fields, status: 'pending', requester: IMPORTED_REQUESTER, batchId, requestedAt, updatedAt: new Date() }
+  return { ...fields, status: 'pending', requester: IMPORTED_REQUESTER, requesterId: null, batchId, requestedAt, updatedAt: new Date() }
 }
 
 async function importMovies(movies: readonly RadarrMovie[]): Promise<number> {

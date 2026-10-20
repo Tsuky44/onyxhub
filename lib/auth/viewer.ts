@@ -2,6 +2,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import { notFound, redirect } from 'next/navigation'
 import { cache } from 'react'
+import { rememberRequester } from '../requests/requester'
 import { fetchMe, onyxBaseUrl } from '../services/onyx/auth'
 import { toViewer, type Viewer } from './permissions'
 import { readSession } from './session'
@@ -49,6 +50,8 @@ export const getOptionalViewer = cache(async (): Promise<Viewer | null> => {
   }
   const viewer = toViewer(user)
   remember(key, viewer)
+  // Le nom vient d'être relu chez Onyx : un renommage se reporte sur les demandes du compte (ADR-0012).
+  rememberRequester(viewer.id, viewer.name)
   return viewer
 })
 

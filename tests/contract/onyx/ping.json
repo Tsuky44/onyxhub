@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "message": "Project Player Server is running",
+  "playback_ticket_version": 1,
+  "version": "dev",
+  "capabilities": [
+    "playback_tickets",
+    "progress_long_poll",
+    "media_language",
+    "watched_by_credits",
+    "libraries",
+    "announcements",
+    "poster_picker",
+    "watch_lists",
+    "mediahub_link_test",
+    "library_tmdb_index",
+    "my_requests",
+    "onyxhub_import_signal"
+  ]
+}

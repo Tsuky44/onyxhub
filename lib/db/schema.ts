@@ -38,6 +38,11 @@ export const mediaRequests = sqliteTable(
     status: text('status', { enum: REQUEST_STATUSES }).notNull(),
     /** Le nom du compte Onyx, seul identifiant que le serveur Onyx transmet (`X-Player-Username`). */
     requester: text('requester').notNull(),
+    /**
+     * L'identifiant du compte Onyx (`X-Player-Id`, ADR-0012) : il survit à un
+     * renommage. `null` pour les demandes d'avant, rattachées au premier passage du compte.
+     */
+    requesterId: integer('requester_id'),
     batchId: text('batch_id').notNull(),
     requestedAt: integer('requested_at', { mode: 'timestamp_ms' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
@@ -47,6 +52,7 @@ export const mediaRequests = sqliteTable(
     index('media_requests_tvdb_idx').on(table.tvdbId),
     index('media_requests_status_idx').on(table.status),
     index('media_requests_requester_idx').on(table.requester),
+    index('media_requests_requester_id_idx').on(table.requesterId),
     index('media_requests_batch_idx').on(table.batchId),
     index('media_requests_requested_idx').on(table.requestedAt),
   ],

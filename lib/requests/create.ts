@@ -26,6 +26,12 @@ export interface RequestInput {
   posterPath?: string | null
 }
 
+/** Le compte Onyx qui demande : son nom, et son identifiant quand on le connaît (ADR-0012). */
+export interface Requester {
+  name: string
+  id: number | null
+}
+
 export type RequestOutcome =
   | { ok: true; message: string; created: number }
   | { ok: false; status: 404 | 502 | 503; message: string }
@@ -39,20 +45,21 @@ async function tmdbDetails(type: MediaType, tmdbId: number): Promise<TmdbDetails
   }
 }
 
-function baseRow(input: RequestInput, details: TmdbDetails | null, requester: string, batchId: string, now: Date) {
+function baseRow(input: RequestInput, details: TmdbDetails | null, requester: Requester, batchId: string, now: Date) {
   return {
     mediaType: input.mediaType,
     tmdbId: input.tmdbId,
     title: details?.title ?? details?.name ?? input.title?.trim() ?? 'Sans titre',
     posterPath: details?.poster_path ?? input.posterPath ?? null,
-    requester,
+    requester: requester.name,
+    requesterId: requester.id,
     batchId,
     requestedAt: now,
     updatedAt: now,
   }
 }
 
-async function requestMovie(input: RequestInput, requester: string): Promise<RequestOutcome> {
+async function requestMovie(input: RequestInput, requester: Requester): Promise<RequestOutcome> {
   const details = await tmdbDetails('movie', input.tmdbId)
   const outcome = await getRadarr().requestMovie(input.tmdbId)
   const base = baseRow(input, details, requester, randomUUID(), new Date())
@@ -69,7 +76,7 @@ async function requestMovie(input: RequestInput, requester: string): Promise<Req
   return { ok: true, message, created: created.length }
 }
 
-async function requestShow(input: RequestInput, requester: string): Promise<RequestOutcome> {
+async function requestShow(input: RequestInput, requester: Requester): Promise<RequestOutcome> {
   // Sans TMDB, pas d'identifiant TVDB : Sonarr ne saurait pas quelle série ajouter.
   const details = await getTmdb().details('tv', input.tmdbId)
   const tvdbId = details.external_ids?.tvdb_id
@@ -102,7 +109,8 @@ async function requestShow(input: RequestInput, requester: string): Promise<Requ
   return { ok: true, message: `${label} de ${title} : demande envoyée, Sonarr cherche.`, created: created.length }
 }
 
-export async function createRequest(input: RequestInput, requester: string): Promise<RequestOutcome> {
+export async function createRequest(input: RequestInput, requesterName: string, requesterId: number | null = null): Promise<RequestOutcome> {
+  const requester: Requester = { name: requesterName, id: requesterId }
   try {
     return input.mediaType === 'movie' ? await requestMovie(input, requester) : await requestShow(input, requester)
   } catch (error) {

@@ -67,7 +67,7 @@ export async function requestMediaAction(mediaType: MediaType, tmdbId: number, s
   const cleanSeasons = Array.isArray(seasons) ? seasons.filter((season) => Number.isInteger(season) && season >= 0) : undefined
   if (mediaType === 'tv' && Array.isArray(seasons) && cleanSeasons?.length === 0) return { ok: false, message: 'Choisis au moins une saison.' }
 
-  const outcome = await createRequest({ mediaType, tmdbId, seasons: cleanSeasons }, viewer.name)
+  const outcome = await createRequest({ mediaType, tmdbId, seasons: cleanSeasons }, viewer.name, viewer.id)
   revalidatePath('/demandes', 'layout')
   return { ok: outcome.ok, message: outcome.message }
 }

@@ -6,6 +6,7 @@ import { errorMessage } from '@/lib/http'
 import { myRequestsPayload, parseRequestBody } from '@/lib/requests/contract'
 import { PAGE_SIZE } from '@/lib/requests/list'
 import { createRequest } from '@/lib/requests/create'
+import { rememberRequester } from '@/lib/requests/requester'
 
 /** Une page de la liste des demandes : au-delà, la liste complète est dans OnyxHub. */
 const MY_REQUESTS_LIMIT = PAGE_SIZE
@@ -18,6 +19,8 @@ const MY_REQUESTS_LIMIT = PAGE_SIZE
 export async function GET(request: Request) {
   const caller = await resolveCaller(request)
   if (caller.kind === 'refused') return NextResponse.json({ error: caller.message }, { status: caller.status })
+  // Un compte renommé dans Onyx retrouve ses demandes avant qu'on les cherche par son nom.
+  if (caller.userId !== null) rememberRequester(caller.userId, caller.username)
   try {
     const groups = await homeRequests({ viewer: caller.username, owner: 'mine' }, MY_REQUESTS_LIMIT)
     return NextResponse.json(myRequestsPayload(groups))
@@ -42,7 +45,8 @@ export async function POST(request: Request) {
   const parsed = parseRequestBody(await request.json().catch(() => null))
   if (!parsed.ok) return NextResponse.json({ error: parsed.message }, { status: 400 })
 
-  const outcome = await createRequest(parsed.input, caller.username)
+  if (caller.userId !== null) rememberRequester(caller.userId, caller.username)
+  const outcome = await createRequest(parsed.input, caller.username, caller.userId)
   if (!outcome.ok) return NextResponse.json({ error: outcome.message }, { status: outcome.status })
 
   revalidatePath('/demandes', 'layout')
