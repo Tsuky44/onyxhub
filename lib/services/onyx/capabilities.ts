@@ -12,6 +12,8 @@ export const OnyxCapability = {
   watchLists: 'watch_lists',
   /** `GET /api/library/tmdb-index` : ce que la bibliothèque a, par identifiant TMDB (ADR-0073 d'Onyx). */
   libraryIndex: 'library_tmdb_index',
+  /** `POST /api/integrations/onyxhub/imported` : un import annoncé est indexé aussitôt (ADR-0074 d'Onyx). */
+  importSignal: 'onyxhub_import_signal',
 } as const
 
 // 5 minutes : assez pour ne pas pinguer à chaque page, assez court pour voir une mise à jour d'Onyx.

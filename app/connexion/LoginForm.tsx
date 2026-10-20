@@ -4,6 +4,7 @@ import { useActionState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/TextField'
 import { loginAction, type LoginState } from './actions'
+import { AppPairing } from './AppPairing'
 
 const INITIAL: LoginState = { step: 'password' }
 
@@ -52,6 +53,14 @@ export function LoginForm({ next, needsServer }: { next: string; needsServer: bo
             {state.step === 'otp' ? 'Valider' : 'Se connecter'}
           </Button>
         </form>
+      )}
+      {state.step === 'password' && !needsServer && (
+        <div className="mt-5 flex flex-col gap-4">
+          <p className="flex items-center gap-3 text-footnote text-text-muted before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+            ou
+          </p>
+          <AppPairing next={next} />
+        </div>
       )}
     </div>
   )

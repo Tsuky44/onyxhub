@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRadarrEvent, parseSonarrEvent } from './webhook-payload'
+import { isImport, parseRadarrEvent, parseSonarrEvent } from './webhook-payload'
 
 describe('webhooks Radarr/Sonarr', () => {
   it("lit le film d'un événement Radarr", () => {
@@ -20,6 +20,26 @@ describe('webhooks Radarr/Sonarr', () => {
       ],
     })
     expect(event).toEqual({ mediaType: 'tv', eventType: 'Grab', tvdbId: 121361, tmdbId: undefined, seasons: [2] })
+  })
+
+  it('lit le fichier importé par Radarr, chemin complet ou dossier + chemin relatif', () => {
+    const movie = { tmdbId: 603, folderPath: '/films/Matrix (1999)/' }
+    expect(parseRadarrEvent({ eventType: 'Download', movie, movieFile: { path: '/films/Matrix (1999)/Matrix.mkv' } })?.paths).toEqual([
+      '/films/Matrix (1999)/Matrix.mkv',
+    ])
+    expect(parseRadarrEvent({ eventType: 'Download', movie, movieFile: { relativePath: 'Matrix.mkv' } })?.paths).toEqual(['/films/Matrix (1999)/Matrix.mkv'])
+    expect(parseRadarrEvent({ eventType: 'Grab', movie })?.paths).toEqual(['/films/Matrix (1999)/'])
+  })
+
+  it('lit tous les épisodes importés d’un lot Sonarr, sans doublon', () => {
+    const event = parseSonarrEvent({
+      eventType: 'Download',
+      series: { tvdbId: 121361, path: '/series/GoT' },
+      episodeFiles: [{ path: '/series/GoT/S01/e1.mkv' }, { relativePath: 'S01/e2.mkv' }],
+      episodeFile: { path: '/series/GoT/S01/e1.mkv' },
+    })
+    expect(event?.paths).toEqual(['/series/GoT/S01/e1.mkv', '/series/GoT/S01/e2.mkv'])
+    expect(event && isImport(event)).toBe(true)
   })
 
   it('ignore un test de connexion, qui ne porte aucun média', () => {
