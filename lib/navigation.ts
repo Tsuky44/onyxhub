@@ -1,9 +1,9 @@
-import { CalendarIcon, DownloadIcon, HomeIcon, RequestIcon, SettingsIcon, type Icon } from '@/lib/icons'
+import { CalendarIcon, DownloadIcon, HomeIcon, RequestIcon, SettingsIcon, StatsIcon, type Icon } from '@/lib/icons'
 
 export interface NavItem {
   href: string
   label: string
-  /** Libellé de la barre du bas mobile, où cinq onglets se partagent 375 px. */
+  /** Libellé de la barre du bas mobile, où jusqu'à six onglets se partagent 375 px. */
   shortLabel?: string
   icon: Icon
   /** Réservé aux comptes Onyx qui ont `manage_settings`. */
@@ -16,6 +16,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: '/demandes', label: 'Demandes', icon: RequestIcon, adminOnly: false },
   { href: '/calendrier', label: 'Calendrier', icon: CalendarIcon, adminOnly: false },
   { href: '/telechargements', label: 'Téléchargements', shortLabel: 'Transferts', icon: DownloadIcon, adminOnly: true },
+  { href: '/statistiques', label: 'Statistiques', shortLabel: 'Stats', icon: StatsIcon, adminOnly: true },
   { href: '/reglages', label: 'Réglages', icon: SettingsIcon, adminOnly: true },
 ]
 

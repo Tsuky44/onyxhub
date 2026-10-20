@@ -24,6 +24,7 @@ export {
   CaretLeft as ChevronLeftIcon,
   CaretRight as ChevronRightIcon,
   CaretUp as ChevronUpIcon,
+  ChartBar as StatsIcon,
   Check as CheckIcon,
   CheckCircle as SuccessIcon,
   Columns as ColumnsIcon,

@@ -161,3 +161,19 @@ export function MonthView({ days, month, today, releases }: { days: string[]; mo
     </div>
   )
 }
+
+/** La grille vide pendant le chargement, à la taille finale : rien ne saute à l'arrivée. */
+export function MonthSkeleton({ days }: { days: number }) {
+  return (
+    <div aria-hidden className="overflow-hidden rounded-panel border border-glass-border bg-surface">
+      <div className="h-9 border-b border-glass-border" />
+      <div className="grid grid-cols-7 gap-px">
+        {Array.from({ length: days }, (_, index) => (
+          <div key={index} className="min-h-16 p-2 md:min-h-28">
+            <div className="size-6 animate-pulse rounded-full bg-elevated" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

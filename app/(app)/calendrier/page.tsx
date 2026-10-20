@@ -11,7 +11,7 @@ import { calendarData } from '@/lib/calendar/upcoming'
 import { settle } from '@/lib/home/admin'
 import { CalendarToolbar } from './CalendarToolbar'
 import { CalendarSkeleton, ListView, WeekView } from './CalendarViews'
-import { MonthView } from './MonthView'
+import { MonthView } from '@/components/calendar/MonthView'
 import { SubscriptionsButton } from './SubscriptionsButton'
 
 export const metadata: Metadata = { title: 'Calendrier' }

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ReleaseBadge, ReleaseRow, releaseSubtitle } from '@/components/calendar/ReleaseRow'
+import { MonthSkeleton } from '@/components/calendar/MonthView'
 import { Poster } from '@/components/media/Poster'
 import { cn } from '@/lib/cn'
 import { byDay, dayNumber, dayTitle, weekdayShort } from '@/lib/calendar/query'
@@ -92,20 +93,7 @@ export function ListView({ today, releases }: { today: string; releases: Upcomin
 
 /** La place du calendrier pendant le chargement, à la forme de la vue : rien ne saute à l'arrivée. */
 export function CalendarSkeleton({ view, days }: { view: 'mois' | 'semaine' | 'liste'; days: number }) {
-  if (view === 'mois') {
-    return (
-      <div aria-hidden className="overflow-hidden rounded-panel border border-glass-border bg-surface">
-        <div className="h-9 border-b border-glass-border" />
-        <div className="grid grid-cols-7 gap-px">
-          {Array.from({ length: days }, (_, index) => (
-            <div key={index} className="min-h-16 p-2 md:min-h-28">
-              <div className="size-6 animate-pulse rounded-full bg-elevated" />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  if (view === 'mois') return <MonthSkeleton days={days} />
   return (
     <div aria-hidden className={cn('grid gap-3', view === 'semaine' && 'md:grid-cols-7')}>
       {Array.from({ length: view === 'semaine' ? 7 : 4 }, (_, index) => (

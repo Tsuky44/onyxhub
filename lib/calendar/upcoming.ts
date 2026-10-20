@@ -6,7 +6,7 @@ import { errorMessage, NotConfiguredError } from '../http'
 import { getRadarr } from '../services/arr/radarr'
 import { getSonarr } from '../services/arr/sonarr'
 import { TtlCache } from '../ttl-cache'
-import { episodeReleases, groupEpisodeDrops, localDay, mergeReleases, movieReleases, sortReleases, type Release } from './releases'
+import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sortReleases, type Release } from './releases'
 import { subscriptionReleases } from './subscriptions'
 
 /**
@@ -96,11 +96,4 @@ export async function calendarData(from: string, to: string, viewer: { id: numbe
     unavailable: library.unavailable,
     failedSubscriptions: subscribed.failed,
   }
-}
-
-/** Les `days` prochains jours, aujourd'hui compris. */
-export async function upcoming(days: number, viewer: { id: number; name: string }, now = new Date()): Promise<UpcomingRelease[]> {
-  const end = new Date(now)
-  end.setDate(end.getDate() + days - 1)
-  return (await calendarData(localDay(now), localDay(end), viewer)).releases
 }

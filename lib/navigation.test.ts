@@ -9,6 +9,7 @@ describe('navigation', () => {
 
   it('montre tous les onglets à un admin', () => {
     expect(navItemsFor(true).map((item) => item.href)).toContain('/telechargements')
+    expect(navItemsFor(true).map((item) => item.href)).toContain('/statistiques')
     expect(navItemsFor(true).map((item) => item.href)).toContain('/reglages')
   })
 

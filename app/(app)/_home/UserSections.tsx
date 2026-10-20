@@ -4,13 +4,12 @@ import { Poster } from '@/components/media/Poster'
 import { RequestStatusBadge } from '@/components/media/StatusBadge'
 import { Panel, PanelError, ProgressBar } from '@/components/ui/Panel'
 import type { Viewer } from '@/lib/auth/viewer'
-import { ReleaseRow } from '@/components/calendar/ReleaseRow'
-import { dayTitle } from '@/lib/calendar/query'
-import { localDay } from '@/lib/calendar/releases'
-import { upcoming, type UpcomingRelease } from '@/lib/calendar/upcoming'
+import { MonthSkeleton, MonthView } from '@/components/calendar/MonthView'
+import { calendarRange, parseCalendarQuery } from '@/lib/calendar/query'
+import { calendarData } from '@/lib/calendar/upcoming'
 import { settle } from '@/lib/home/admin'
 import { homeRequests, type HomeRequest } from '@/lib/home/requests'
-import { RequestIcon, SearchIcon } from '@/lib/icons'
+import { ChevronRightIcon, RequestIcon, SearchIcon } from '@/lib/icons'
 import { loadCatalog } from '@/lib/requests/catalog'
 import { formatRelative, formatSeasons, mediaHref } from '@/lib/requests/format'
 
@@ -77,49 +76,59 @@ export async function MyRequests({ viewer }: { viewer: Viewer }) {
   )
 }
 
-function dayLabel(date: string, today: string, tomorrow: string): string {
-  if (date === today) return 'Aujourd\'hui'
-  if (date === tomorrow) return 'Demain'
-  return dayTitle(date)
+function CalendarHeading() {
+  return (
+    <div className="mb-4 flex min-h-8 items-center justify-between gap-3">
+      <h2 id="accueil-calendrier" className="text-headline font-semibold text-text">
+        Sorties du mois
+      </h2>
+      <Link href="/calendrier" className="-my-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-subhead font-medium text-text-secondary hover:text-text">
+        Calendrier
+        <ChevronRightIcon size={14} aria-hidden />
+      </Link>
+    </div>
+  )
 }
 
-export async function UpcomingReleases({ viewer, now }: { viewer: Viewer; now: Date }) {
-  const result = await settle(() => upcoming(14, viewer, now))
-  if (!result.ok) {
-    return (
-      <Panel title="Prochaines sorties" href="/calendrier" hrefLabel="Calendrier">
-        <PanelError message={result.message} />
-      </Panel>
-    )
-  }
-  // Les miennes d'abord à date égale, et pas plus de 8 lignes : le calendrier montre le reste.
-  const releases = result.value.slice(0, 8)
-  const byDay = new Map<string, UpcomingRelease[]>()
-  for (const release of releases) byDay.set(release.date, [...(byDay.get(release.date) ?? []), release])
-  const tomorrow = new Date(now)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+function monthRange(today: string) {
+  return calendarRange(parseCalendarQuery({}, today))
+}
 
+export function HomeCalendarSkeleton({ today }: { today: string }) {
   return (
-    <Panel title="Prochaines sorties" href="/calendrier" hrefLabel="Calendrier">
-      {releases.length === 0 ? (
-        <p className="text-body text-text-secondary">Rien de prévu dans les deux prochaines semaines.</p>
-      ) : (
-        <div className="flex flex-col gap-5">
-          {[...byDay].map(([date, items]) => (
-            <div key={date}>
-              <h3 className="mb-2 text-footnote font-semibold text-text-secondary">{dayLabel(date, localDay(now), localDay(tomorrow))}</h3>
-              <ul className="flex flex-col gap-3">
-                {[...items]
-                  .sort((a, b) => Number(b.mine) - Number(a.mine))
-                  .map((release) => (
-                    <ReleaseRow key={release.id} release={release} />
-                  ))}
-              </ul>
-            </div>
-          ))}
+    <section aria-labelledby="accueil-calendrier" className="min-w-0">
+      <CalendarHeading />
+      <MonthSkeleton days={monthRange(today).days.length} />
+    </section>
+  )
+}
+
+/**
+ * Le mois en cours au cœur de l'accueil, comme MediaHub : c'est ce qu'on
+ * vient voir. Les vues semaine et liste, les filtres et les abonnements
+ * restent sur /calendrier.
+ */
+export async function HomeCalendar({ viewer, today }: { viewer: Viewer; today: string }) {
+  const range = monthRange(today)
+  const result = await settle(() => calendarData(range.from, range.to, viewer))
+  return (
+    <section aria-labelledby="accueil-calendrier" className="min-w-0">
+      <CalendarHeading />
+      {!result.ok ? (
+        <div className="rounded-panel border border-glass-border bg-surface p-5">
+          <PanelError message={result.message} />
         </div>
+      ) : (
+        <>
+          {result.value.unavailable.length > 0 && (
+            <p role="status" className="mb-4 text-footnote text-warning">
+              {result.value.unavailable.join(' et ')} ne répond pas : des sorties manquent.
+            </p>
+          )}
+          <MonthView days={range.days} month={today.slice(0, 7)} today={today} releases={result.value.releases} />
+        </>
       )}
-    </Panel>
+    </section>
   )
 }
 
