@@ -4,6 +4,7 @@ import {
   availabilityPayload,
   integrationPingPayload,
   MAX_BATCH_ITEMS,
+  myRequestsPayload,
   parseAvailabilityBatch,
   parseRequestBody,
 } from './contract'
@@ -61,7 +62,22 @@ describe('contrat Onyx', () => {
   })
 
   it('se présente comme OnyxHub au test de liaison', () => {
-    expect(integrationPingPayload('1.2.3')).toEqual({ status: 'ok', service: 'onyxhub', version: '1.2.3', features: ['availability-batch'] })
+    expect(integrationPingPayload('1.2.3')).toEqual({ status: 'ok', service: 'onyxhub', version: '1.2.3', features: ['availability-batch', 'my-requests'] })
+  })
+
+  it("rend les demandes du compte au format que lit l'app Onyx", () => {
+    const request = {
+      mediaType: 'tv' as const,
+      tmdbId: 1399,
+      title: 'Game of Thrones',
+      posterPath: '/got.jpg',
+      seasons: [1, 2],
+      status: 'processing' as const,
+      requestedAt: '2026-10-20T10:00:00.000Z',
+      progress: 42.5,
+    }
+    // Les champs internes (identifiants de lignes, demandeur) ne sortent pas.
+    expect(myRequestsPayload([{ ...request, ids: [1, 2], requester: 'mathis' } as typeof request])).toEqual({ requests: [request] })
   })
 
   it('répond la disponibilité au format de MediaHub', () => {

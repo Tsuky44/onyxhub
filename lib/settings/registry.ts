@@ -42,7 +42,18 @@ export const SERVICES = [
     label: 'Onyx',
     description: 'Le serveur dont OnyxHub utilise les comptes, les permissions et les statistiques.',
     testable: true,
-    fields: [{ key: 'onyx_url', label: 'URL du serveur', kind: 'url', placeholder: 'http://192.168.1.10:8080', env: 'ONYX_URL' }],
+    fields: [
+      { key: 'onyx_url', label: 'URL du serveur', kind: 'url', placeholder: 'http://192.168.1.10:8080', env: 'ONYX_URL' },
+      {
+        key: 'onyx_web_url',
+        label: 'Adresse d\'Onyx pour le navigateur',
+        kind: 'url',
+        optional: true,
+        env: 'ONYX_WEB_URL',
+        placeholder: 'https://onyx.example.com',
+        help: 'Celle qu\'ouvre « Lire dans Onyx ». Vide : l\'URL du serveur ci-dessus.',
+      },
+    ],
   },
   {
     id: 'integration',

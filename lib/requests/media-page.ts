@@ -13,6 +13,7 @@ import { mediaDownloads, type DownloadProgress } from './downloads'
 import { yearOf } from './format'
 import { findSeries, getLibrary } from './library'
 import { mediaAvailability } from './media-availability'
+import { onyxLibrary, onyxMediaId, onyxWatchUrl, withOnyxPresence } from './onyx-presence'
 import { requestsForMedia } from './repository'
 import type { AvailabilityStatus, RequestStatus } from './status'
 import { isInWatchLater } from './watch-later'
@@ -58,6 +59,8 @@ export interface MediaPageData {
   downloads: DownloadProgress[]
   /** La fiche dans Radarr/Sonarr, pour l'admin seulement. */
   externalUrl: string | null
+  /** Le lien qui ouvre ce titre dans l'app web d'Onyx, quand Onyx l'a (ADR-0010). */
+  onyxUrl: string | null
 }
 
 /** La bande-annonce : française d'abord, officielle ensuite, YouTube seulement (lue sans cookie). */
@@ -105,13 +108,18 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
   const details = await getTmdb().details(mediaType, tmdbId)
   const tvdbId = details.external_ids?.tvdb_id ?? null
 
-  const [availability, recommendations, similar, downloads, external] = await Promise.all([
+  const [arrAvailability, recommendations, similar, downloads, external, onyx] = await Promise.all([
     mediaAvailability(mediaType, tmdbId, tvdbId),
     withStatus(details.recommendations?.results.slice(0, 20) ?? [], mediaType),
     withStatus(details.similar?.results.slice(0, 20) ?? [], mediaType),
     mediaDownloads(mediaType, tmdbId, tvdbId).catch(() => []),
     viewer.isAdmin ? externalUrl(mediaType, tmdbId, tvdbId) : Promise.resolve(null),
+    onyxLibrary(),
   ])
+  const onyxId = onyxMediaId(onyx, mediaType, tmdbId)
+  const presentStatus = withOnyxPresence(arrAvailability.status, onyxId !== null)
+  const availability =
+    presentStatus === arrAvailability.status ? arrAvailability : { ...arrAvailability, status: presentStatus, available: true }
 
   const rows = requestsForMedia(mediaType, tmdbId)
   const requestedSeasons = new Set(rows.map((row) => row.seasonNumber))
@@ -140,7 +148,8 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
       requestedAt: row.requestedAt.toISOString(),
     })),
     seasons,
-    inWatchLater: isInWatchLater(viewer.id, mediaType, tmdbId),
+    // Onyx muet : la fiche s'affiche quand même, bouton « Plus tard » éteint.
+    inWatchLater: await isInWatchLater(viewer, mediaType, tmdbId).catch(() => false),
     subscription: subscriptionState(viewer.id, mediaType, tmdbId, details),
     trailer: pickTrailer(details.videos?.results ?? []),
     crew: crewOf(details, mediaType),
@@ -149,5 +158,6 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
     similar,
     downloads,
     externalUrl: external,
+    onyxUrl: onyxId === null ? null : onyxWatchUrl(mediaType, onyxId),
   }
 }

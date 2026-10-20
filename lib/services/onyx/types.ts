@@ -105,4 +105,6 @@ export interface OnyxScanStatus {
 export interface OnyxPing {
   status: string
   version: string
+  /** Ce que ce serveur sait faire (`server/handlers/ping.go`) : un Onyx plus ancien en annonce moins. */
+  capabilities: string[]
 }

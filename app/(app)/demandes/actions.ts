@@ -79,7 +79,13 @@ export async function setWatchLaterAction(
   const viewer = await getViewer()
   const media = cleanMediaItem(item)
   if (!media) return !wanted
-  const result = setWatchLater(viewer.id, media, wanted === true)
-  revalidatePath('/demandes')
-  return result
+  try {
+    const result = await setWatchLater(viewer, media, wanted === true)
+    revalidatePath('/demandes')
+    return result
+  } catch (error) {
+    // Onyx a refusé ou ne répond pas : le bouton garde son état d'avant.
+    console.warn(`[plus tard] ${media.mediaType}/${media.tmdbId} : ${errorMessage(error)}`)
+    return !wanted
+  }
 }

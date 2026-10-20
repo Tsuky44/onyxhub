@@ -6,6 +6,7 @@ import { activeFilterCount, type DiscoverQuery } from './discover-query'
 import { yearOf } from './format'
 import { getLibrary } from './library'
 import { availabilityMap } from './media-availability'
+import { onyxLibrary, onyxMediaId, withOnyxPresence } from './onyx-presence'
 import { recentRequestsOf } from './repository'
 import type { AvailabilityStatus } from './status'
 import { listWatchLater } from './watch-later'
@@ -66,8 +67,12 @@ export async function withStatus(items: readonly TmdbSummary[], fallbackType?: M
     seen.add(key)
     return [card]
   })
-  const statuses = availabilityMap(await getLibrary(), cards)
-  return cards.map((card) => ({ ...card, status: statuses.get(`${card.mediaType}:${card.tmdbId}`)?.status ?? 'unknown' }))
+  const [library, onyx] = await Promise.all([getLibrary(), onyxLibrary()])
+  const statuses = availabilityMap(library, cards)
+  return cards.map((card) => ({
+    ...card,
+    status: withOnyxPresence(statuses.get(`${card.mediaType}:${card.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, card.mediaType, card.tmdbId) !== null),
+  }))
 }
 
 async function fromPaged(paged: Paged<TmdbSummary>, page: number, fallbackType?: MediaType, maxPage = MAX_PAGE): Promise<CatalogPage> {
@@ -100,10 +105,16 @@ async function forYou(viewer: Viewer, page: number): Promise<CatalogPage> {
 }
 
 async function watchLaterPage(viewer: Viewer): Promise<CatalogPage> {
-  const saved = listWatchLater(viewer.id)
-  const statuses = availabilityMap(await getLibrary(), saved)
+  const saved = await listWatchLater(viewer)
+  const [library, onyx] = await Promise.all([getLibrary(), onyxLibrary()])
+  const statuses = availabilityMap(library, saved)
   return {
-    items: saved.map((item) => ({ ...item, year: null, rating: null, status: statuses.get(`${item.mediaType}:${item.tmdbId}`)?.status ?? 'unknown' })),
+    items: saved.map((item) => ({
+      ...item,
+      year: null,
+      rating: null,
+      status: withOnyxPresence(statuses.get(`${item.mediaType}:${item.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, item.mediaType, item.tmdbId) !== null),
+    })),
     page: 1,
     hasMore: false,
   }

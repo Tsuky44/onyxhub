@@ -1,6 +1,7 @@
 import type { Availability } from './availability'
 import type { RequestInput } from './create'
 import type { MediaType } from '../services/tmdb/types'
+import type { RequestStatus } from './status'
 
 /**
  * Les formats que le serveur Onyx connaît : les deux de MediaHub, repris à
@@ -71,9 +72,37 @@ export function availabilityBatchPayload(results: readonly { query: Availability
   }
 }
 
+/** Ce que `GET /api/request` rend de chaque demande : le lot (une ligne par saison chez OnyxHub) et sa progression. */
+export interface MyRequest {
+  mediaType: MediaType
+  tmdbId: number
+  title: string
+  posterPath: string | null
+  seasons: number[]
+  status: RequestStatus
+  requestedAt: string
+  progress: number | null
+}
+
+/** Réponse de `GET /api/request` : les demandes du compte, les plus récentes d'abord (ADR-0010). */
+export function myRequestsPayload(requests: readonly MyRequest[]) {
+  return {
+    requests: requests.map(({ mediaType, tmdbId, title, posterPath, seasons, status, requestedAt, progress }) => ({
+      mediaType,
+      tmdbId,
+      title,
+      posterPath,
+      seasons,
+      status,
+      requestedAt,
+      progress,
+    })),
+  }
+}
+
 /** Réponse de `GET /api/integration/ping` : ce qui permet au bouton « Tester » d'Onyx de dire qui répond. */
 export function integrationPingPayload(version: string) {
-  return { status: 'ok', service: 'onyxhub', version, features: ['availability-batch'] }
+  return { status: 'ok', service: 'onyxhub', version, features: ['availability-batch', 'my-requests'] }
 }
 
 /** Réponse de `GET /api/media/availability/:id` : `{ status, available, seasons[] }`. */

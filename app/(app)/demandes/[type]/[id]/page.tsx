@@ -8,7 +8,8 @@ import { AvailabilityBadge } from '@/components/media/StatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getViewer, type Viewer } from '@/lib/auth/viewer'
 import { errorMessage, NotConfiguredError, ServiceError } from '@/lib/http'
-import { StarIcon, WarningIcon } from '@/lib/icons'
+import { buttonClasses } from '@/components/ui/Button'
+import { PlayIcon, StarIcon, WarningIcon } from '@/lib/icons'
 import { formatRuntime, mediaHref, yearOf } from '@/lib/requests/format'
 import { loadMediaPage } from '@/lib/requests/media-page'
 import { getTmdb } from '@/lib/services/tmdb/client'
@@ -119,6 +120,12 @@ export default async function MediaPage({ params }: { params: Params }) {
             {media.tagline && <p className="text-callout text-pretty text-text-muted italic">{media.tagline}</p>}
 
             <div className="flex flex-wrap items-start gap-3 pt-2">
+              {data.onyxUrl && (
+                <a href={data.onyxUrl} target="_blank" rel="noreferrer" className={buttonClasses('primary')}>
+                  <PlayIcon size={18} weight="fill" aria-hidden />
+                  Lire dans Onyx
+                </a>
+              )}
               <RequestControl
                 mediaType={mediaType}
                 tmdbId={tmdbId}

@@ -1,8 +1,31 @@
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { resolveCaller } from '@/lib/auth/caller'
-import { parseRequestBody } from '@/lib/requests/contract'
+import { homeRequests } from '@/lib/home/requests'
+import { errorMessage } from '@/lib/http'
+import { myRequestsPayload, parseRequestBody } from '@/lib/requests/contract'
+import { PAGE_SIZE } from '@/lib/requests/list'
 import { createRequest } from '@/lib/requests/create'
+
+/** Une page de la liste des demandes : au-delà, la liste complète est dans OnyxHub. */
+const MY_REQUESTS_LIMIT = PAGE_SIZE
+
+/**
+ * `GET /api/request` : les demandes du compte que nomme `X-Player-Username`
+ * (ou du compte connecté), avec la progression du téléchargement, pour
+ * l'écran « Mes demandes » de l'app Onyx (ADR-0010).
+ */
+export async function GET(request: Request) {
+  const caller = await resolveCaller(request)
+  if (caller.kind === 'refused') return NextResponse.json({ error: caller.message }, { status: caller.status })
+  try {
+    const groups = await homeRequests({ viewer: caller.username, owner: 'mine' }, MY_REQUESTS_LIMIT)
+    return NextResponse.json(myRequestsPayload(groups))
+  } catch (error) {
+    console.error(`[mes demandes] ${caller.username} : ${errorMessage(error)}`)
+    return NextResponse.json({ error: 'Les demandes n\'ont pas pu être lues.' }, { status: 500 })
+  }
+}
 
 /**
  * `POST /api/request` : la demande envoyée par le serveur Onyx (ADR-0002),

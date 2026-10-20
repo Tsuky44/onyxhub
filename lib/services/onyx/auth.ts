@@ -20,7 +20,8 @@ function requireBaseUrl(): string {
 export async function pingOnyx(baseUrl: string): Promise<OnyxPing> {
   const ping = await requestJson<Partial<OnyxPing>>(SERVICE, `${baseUrl}/api/ping`, { timeoutMs: 5_000 })
   if (ping.status !== 'ok') throw new ServiceError(SERVICE, 'Cette adresse répond, mais ce n\'est pas un serveur Onyx')
-  return { status: ping.status, version: ping.version ?? 'inconnue' }
+  const capabilities = Array.isArray(ping.capabilities) ? ping.capabilities.filter((name) => typeof name === 'string') : []
+  return { status: ping.status, version: ping.version ?? 'inconnue', capabilities }
 }
 
 interface LoginBody {

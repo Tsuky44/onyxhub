@@ -35,7 +35,7 @@ describe('formulaire de réglages', () => {
   it('ignore un champ verrouillé par une variable d\'environnement', () => {
     const onyx = findService('onyx')!
     const { updates } = parseServiceForm(onyx, form({ onyx_url: 'http://autre:8080' }), new Set(['onyx_url']))
-    expect(updates).toEqual({})
+    expect(updates).not.toHaveProperty('onyx_url')
   })
 
   it('efface un champ texte vidé', () => {
