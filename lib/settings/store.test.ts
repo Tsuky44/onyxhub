@@ -46,6 +46,11 @@ describe('réglages', () => {
     expect(getSetting('radarr_api_key')).toBe('cle-radarr-123')
   })
 
+  it('garde un mot de passe tel quel, espaces au bord comprises', () => {
+    setSettings({ qbittorrent_password: ' mot de passe ' })
+    expect(getSetting('qbittorrent_password')).toBe(' mot de passe ')
+  })
+
   it("garde une URL en clair, lisible dans une sauvegarde", () => {
     setSettings({ radarr_url: 'http://nas:7878' })
     expect(getSetting('radarr_url')).toBe('http://nas:7878')

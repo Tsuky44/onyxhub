@@ -112,7 +112,7 @@ export function createQbittorrent(config: QbitConfig, { isolated = false }: { is
           body: new URLSearchParams({ username: config.username, password: config.password }),
         }).catch((error: unknown) => {
           // qBit récent refuse des identifiants faux par un 401 ; tous bannissent l'IP par un 403 après trop d'échecs.
-          if (error instanceof ServiceError && error.status === 401) throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés', { status: 401, cause: error })
+          if (error instanceof ServiceError && error.status === 401) throw new ServiceError(SERVICE, 'qBittorrent : identifiants refusés (HTTP 401)', { status: 401, cause: error })
           if (error instanceof ServiceError && error.status === 403) {
             throw new ServiceError(SERVICE, "qBittorrent : l'IP d'OnyxHub est bannie après trop d'échecs de connexion (attends ou redémarre qBittorrent)", { status: 403, cause: error })
           }

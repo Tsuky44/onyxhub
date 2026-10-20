@@ -26,12 +26,13 @@ export function setSettings(entries: Partial<Record<SettingKey, string>>): void 
   const db = getDb()
   db.transaction((tx) => {
     for (const [key, raw] of Object.entries(entries)) {
-      const value = raw?.trim() ?? ''
+      const secret = findField(key)?.kind === 'secret'
+      // Un mot de passe peut commencer ou finir par une espace : le rogner le rendrait faux.
+      const value = (secret ? raw : raw?.trim()) ?? ''
       if (!value) {
         tx.delete(settings).where(eq(settings.key, key)).run()
         continue
       }
-      const secret = findField(key)?.kind === 'secret'
       const row = { key, value: secret ? seal(value) : value, encrypted: secret, updatedAt: new Date() }
       tx.insert(settings).values(row).onConflictDoUpdate({ target: settings.key, set: row }).run()
     }
