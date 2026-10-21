@@ -16,8 +16,10 @@ import {
   myRequestsPayload,
   parseAvailabilityBatch,
   parseRequestBody,
+  requestFeedPayload,
   type MyRequest,
 } from './contract'
+import type { RequestFeed } from './feed'
 import { onyxMediaId } from './onyx-presence'
 
 /**
@@ -49,6 +51,7 @@ const UPSTREAM: Record<string, string> = {
       'imported.json',
       'library_tmdb_index.json',
       'mediahub_link_test.json',
+      'request_feed.json',
     ].map((name) => [name, `contract/onyxhub/${name}`]),
   ),
 }
@@ -96,6 +99,11 @@ describe('contrat avec Onyx', () => {
   it('rend « Mes demandes » au format que lit l’app Onyx', () => {
     const payload = fixture('my_requests.json') as { requests: MyRequest[] }
     expect(myRequestsPayload(payload.requests)).toEqual(payload)
+  })
+
+  it('rend le flux des nouvelles demandes au format que lit l’app Onyx', () => {
+    const payload = fixture('request_feed.json') as RequestFeed
+    expect(requestFeedPayload(payload)).toEqual(payload)
   })
 
   it('annonce un import au format que lit le serveur Onyx', async () => {

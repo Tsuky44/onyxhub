@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq, inArray, ne, or, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, ne, or, sql, type SQL } from 'drizzle-orm'
 import { getDb } from '../db'
 import { mediaRequests, type MediaRequestRow } from '../db/schema'
 import type { MediaType } from '../services/tmdb/types'
@@ -94,6 +94,22 @@ export function recentRequestsOf(requester: string, limit: number): MediaRequest
     .orderBy(desc(mediaRequests.requestedAt))
     .limit(limit)
     .all()
+}
+
+/**
+ * Les `limit` dernières lignes créées après `afterId`, plus récentes d'abord.
+ * L'identifiant plutôt que `requestedAt` : la date est prise avant l'appel à
+ * Radarr ou Sonarr, la ligne écrite après, si bien qu'une demande lente
+ * arriverait avec une date déjà dépassée par le curseur.
+ */
+export function requestsAfter(afterId: number, limit: number): MediaRequestRow[] {
+  return getDb().select().from(mediaRequests).where(gt(mediaRequests.id, afterId)).orderBy(desc(mediaRequests.id)).limit(limit).all()
+}
+
+/** L'identifiant de la dernière ligne créée, 0 sans demande. */
+export function lastRequestId(): number {
+  const row = getDb().select({ id: sql<number | null>`max(${mediaRequests.id})` }).from(mediaRequests).get()
+  return row?.id ?? 0
 }
 
 /** Les identifiants TVDB connus par série, pour retrouver une série dans Sonarr v3 sans appeler TMDB. */

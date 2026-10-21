@@ -1,5 +1,6 @@
 import type { Availability } from './availability'
 import type { RequestInput } from './create'
+import type { RequestFeed } from './feed'
 import type { MediaType } from '../services/tmdb/types'
 import type { RequestStatus } from './status'
 
@@ -96,6 +97,31 @@ export function myRequestsPayload(requests: readonly MyRequest[]) {
       status,
       requestedAt,
       progress,
+    })),
+  }
+}
+
+/** `?after=` de `GET /api/request/feed` : absent au premier passage, sinon le curseur rendu au précédent. */
+export function parseFeedCursor(raw: string | null): { ok: true; after: number | null } | { ok: false; message: string } {
+  if (raw === null || raw === '') return { ok: true, after: null }
+  const after = Number(raw)
+  if (!Number.isInteger(after) || after < 0) return { ok: false, message: 'after doit être un curseur rendu par ce flux.' }
+  return { ok: true, after }
+}
+
+/** Réponse de `GET /api/request/feed` : `{ cursor, requests[] }` (ADR-0013). */
+export function requestFeedPayload(feed: RequestFeed) {
+  return {
+    cursor: feed.cursor,
+    requests: feed.requests.map(({ id, mediaType, tmdbId, title, posterPath, seasons, requester, requestedAt }) => ({
+      id,
+      mediaType,
+      tmdbId,
+      title,
+      posterPath,
+      seasons,
+      requester,
+      requestedAt,
     })),
   }
 }

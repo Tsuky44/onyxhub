@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { Poster } from '@/components/media/Poster'
+import { preloadPosters } from '@/components/media/preload-posters'
+import { useLookahead } from '@/components/media/useLookahead'
 import { RequestStatusBadge } from '@/components/media/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
@@ -18,6 +20,8 @@ type Feedback = { ok: boolean; message: string } | null
 
 const keyOf = (group: RequestGroup) => group.ids.join('-')
 
+const THUMB = { sizes: '48px', source: 'w185' } as const
+
 /**
  * La liste des demandes de MediaHub : une ligne par lot, défilement infini,
  * et pour l'admin la sélection multiple, la suppression groupée et la
@@ -31,9 +35,16 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<RequestGroup[] | null>(null)
   const [feedback, setFeedback] = useState<Feedback>(null)
+  const [loadError, setLoadError] = useState(false)
   const [loading, startLoading] = useTransition()
   const [working, startWorking] = useTransition()
   const sentinel = useRef<HTMLDivElement>(null)
+  // Le lot suivant et ses vignettes partent dès l'affichage du précédent : la sentinelle n'a plus qu'à l'ajouter.
+  const lookahead = useLookahead<number, RequestListPage>({
+    load: (offset) => loadRequestPageAction(search, offset),
+    next: (page) => (page.hasMore ? page.nextOffset : null),
+    warm: (page) => preloadPosters(page.groups.map((group) => group.posterPath), THUMB),
+  })
 
   // Le serveur renvoie une nouvelle première page après chaque action
   // (router.refresh) : la liste repart de celle-ci, le message reste affiché.
@@ -44,12 +55,25 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
     setNextOffset(initial.nextOffset)
     setHasMore(initial.hasMore)
     setSelected(new Set())
+    lookahead.clear()
   }
+
+  useEffect(() => {
+    if (hasMore) lookahead.prime(nextOffset)
+  }, [lookahead, nextOffset, hasMore])
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) return
     startLoading(async () => {
-      const page = await loadRequestPageAction(search, nextOffset)
+      let page: RequestListPage
+      try {
+        page = await lookahead.take(nextOffset)
+      } catch (error) {
+        console.warn('[demandes] lot suivant :', error)
+        setLoadError(true)
+        return
+      }
+      setLoadError(false)
       setGroups((previous) => {
         const seen = new Set(previous.map(keyOf))
         return [...previous, ...page.groups.filter((group) => !seen.has(keyOf(group)))]
@@ -57,15 +81,15 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
       setNextOffset(page.nextOffset)
       setHasMore(page.hasMore)
     })
-  }, [loading, hasMore, search, nextOffset])
+  }, [loading, hasMore, lookahead, nextOffset])
 
   useEffect(() => {
     const target = sentinel.current
-    if (!target || !hasMore) return
+    if (!target || !hasMore || loadError) return
     const observer = new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && loadMore(), { rootMargin: '600px' })
     observer.observe(target)
     return () => observer.disconnect()
-  }, [hasMore, loadMore])
+  }, [hasMore, loadError, loadMore])
 
   function run(action: () => Promise<{ ok: boolean; message: string }>, after?: () => void) {
     startWorking(async () => {
@@ -160,7 +184,7 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
                   />
                 )}
                 <Link href={mediaHref(group.mediaType, group.tmdbId)} className="flex min-w-0 flex-1 items-center gap-3 shell:gap-4">
-                  <Poster path={group.posterPath} title={group.title} sizes="48px" source="w185" compact className="w-11 shrink-0 shell:w-12" />
+                  <Poster path={group.posterPath} title={group.title} {...THUMB} compact className="w-11 shrink-0 shell:w-12" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-callout font-semibold text-text">{group.title}</span>
                     <span className="block truncate text-footnote text-text-muted">
@@ -194,6 +218,14 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
       {loading && (
         <div className="flex justify-center py-4">
           <span className="size-5 animate-spin rounded-full border-2 border-text-muted border-r-transparent" aria-label="Chargement" />
+        </div>
+      )}
+      {loadError && !loading && (
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <p className="text-body text-text-secondary">La suite de la liste n&apos;a pas pu être chargée.</p>
+          <Button variant="secondary" onClick={loadMore}>
+            Réessayer
+          </Button>
         </div>
       )}
 

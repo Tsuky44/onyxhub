@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchIcon } from '@/lib/icons'
 import type { CatalogItem, CatalogPage } from '@/lib/requests/catalog'
-import { MediaCard } from './MediaCard'
+import { CARD_SIZES, MediaCard } from './MediaCard'
+import { preloadPosters } from './preload-posters'
+import { useLookahead } from './useLookahead'
 
 /**
- * Une grille de médias à défilement infini. La page suivante se charge
- * avant d'atteindre le bas (marge de 1 000 px, comme MediaHub). En revenant
+ * Une grille de médias à défilement infini. Les deux pages suivantes et leurs
+ * affiches se chargent d'avance (`useLookahead`) ; la sentinelle, 1 000 px
+ * avant le bas comme MediaHub, ne fait qu'ajouter une page déjà là. En revenant
  * d'une fiche, la grille retrouve ses pages et sa position (sessionStorage,
  * 5 min) au lieu de repartir de la première page.
  */
@@ -23,6 +26,8 @@ interface Snapshot {
 }
 
 const SNAPSHOT_TTL_MS = 5 * 60_000
+
+type CatalogResult = Awaited<ReturnType<typeof loadCatalogPage>>
 
 function readSnapshot(key: string): Snapshot | null {
   try {
@@ -100,10 +105,23 @@ export function CatalogGrid({
     }
   }, [storageKey])
 
+  const lookahead = useLookahead<number, CatalogResult>({
+    load: (page) => loadCatalogPage(source, page),
+    next: (result) => (result.ok && result.page.hasMore ? result.page.page + 1 : null),
+    warm: (result) => {
+      if (result.ok) preloadPosters(result.page.items.map((item) => item.posterPath), { sizes: CARD_SIZES })
+    },
+    // Deux pages d'avance : un défilement rapide (près de 3 000 px/s au banc) en consomme une en moins d'une seconde.
+    depth: 2,
+  })
+  useEffect(() => {
+    if (hasMore) lookahead.prime(page + 1)
+  }, [lookahead, page, hasMore])
+
   const loadMore = useCallback(() => {
     if (loading || !state.current.hasMore) return
     startLoading(async () => {
-      const result = await loadCatalogPage(source, state.current.page + 1)
+      const result = await lookahead.take(state.current.page + 1)
       if (!result.ok) {
         setError(result.message)
         return
@@ -117,7 +135,7 @@ export function CatalogGrid({
       setHasMore(next.hasMore)
       writeSnapshot(storageKey, { ...next, scrollY: window.scrollY })
     })
-  }, [loading, source, storageKey])
+  }, [loading, lookahead, storageKey])
 
   useEffect(() => {
     const target = sentinel.current
