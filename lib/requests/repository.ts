@@ -85,6 +85,13 @@ export function deleteMediaRows(mediaType: MediaType, tmdbId: number): void {
     .run()
 }
 
+export function deleteSeasonRows(tmdbId: number, seasonNumber: number): void {
+  getDb()
+    .delete(mediaRequests)
+    .where(and(eq(mediaRequests.mediaType, 'tv'), eq(mediaRequests.tmdbId, tmdbId), eq(mediaRequests.seasonNumber, seasonNumber)))
+    .run()
+}
+
 /** Les dernières demandes d'un compte, plus récentes d'abord (recommandations, accueil). */
 export function recentRequestsOf(requester: string, limit: number): MediaRequestRow[] {
   return getDb()

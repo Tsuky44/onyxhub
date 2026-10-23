@@ -7,7 +7,7 @@ import { mediaDownloads, type DownloadProgress } from '@/lib/requests/downloads'
 import { mediaHref } from '@/lib/requests/format'
 import { isMediaType } from '@/lib/requests/media-item'
 import { automaticSearch, grabRelease, searchReleases, seasonEpisodes, type SeasonEpisode } from '@/lib/requests/media-tools'
-import { markAvailable, removeMedia } from '@/lib/requests/remove'
+import { markAvailable, removeMedia, removeSeason } from '@/lib/requests/remove'
 import type { ArrRelease } from '@/lib/services/arr/types'
 import type { MediaType } from '@/lib/services/tmdb/types'
 
@@ -92,6 +92,19 @@ export async function removeMediaAction(mediaType: MediaType, tmdbId: number, de
     return deleteFiles ? 'Média et fichiers supprimés.' : 'Média retiré de la bibliothèque, fichiers conservés.'
   })
   revalidatePath(mediaHref(mediaType, tmdbId))
+  revalidatePath('/demandes/liste')
+  return result
+}
+
+/** Retire complètement une saison chez sorraa : plus cherchée, hors des demandes, fichiers à la corbeille si demandé. */
+export async function removeSeasonAction(tmdbId: number, seasonNumber: number, deleteFiles: boolean): Promise<Result<string>> {
+  if (!(await admin())) return FORBIDDEN
+  if (!isId(tmdbId) || !Number.isInteger(seasonNumber) || seasonNumber < 0) return { ok: false, message: 'Saison inconnue.' }
+  const result = await attempt(async () => {
+    await removeSeason(tmdbId, seasonNumber, deleteFiles === true)
+    return deleteFiles ? 'Saison retirée, fichiers à la corbeille.' : 'Saison retirée, fichiers conservés.'
+  })
+  revalidatePath(mediaHref('tv', tmdbId))
   revalidatePath('/demandes/liste')
   return result
 }

@@ -15,6 +15,7 @@ import { loadMediaPage } from '@/lib/requests/media-page'
 import { getTmdb } from '@/lib/services/tmdb/client'
 import type { MediaType } from '@/lib/services/tmdb/types'
 import { tmdbImageUrl } from '@/lib/tmdb-image'
+import { sorraaConfigured } from '@/lib/services/sorraa/client'
 import { AdminTools } from './AdminTools'
 import { DownloadPanel } from './DownloadPanel'
 import { SubscribeButton, TrailerButton, WatchLaterButton } from './MediaButtons'
@@ -151,7 +152,8 @@ export default async function MediaPage({ params }: { params: Params }) {
                 status={data.availability.status}
                 requests={data.requests}
                 externalUrl={data.externalUrl}
-                inLibrary={inLibrary}
+                inLibrary={inLibrary || (sorraaConfigured() && data.requests.length > 0)}
+                usesSorraa={sorraaConfigured()}
               />
             )}
 

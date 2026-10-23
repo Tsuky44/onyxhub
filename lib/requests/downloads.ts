@@ -3,6 +3,7 @@ import type { QueueItem } from '../services/arr/types'
 import { qbitLive } from '../services/qbittorrent/live'
 import type { Torrent } from '../services/qbittorrent/types'
 import type { MediaType } from '../services/tmdb/types'
+import { sorraaDownloadsFor } from '../integration/sorraa-downloads'
 import { findSeries, getLibrary, type LibraryIndex } from './library'
 
 /**
@@ -80,6 +81,9 @@ export function downloadsIn(
 }
 
 export async function mediaDownloads(mediaType: MediaType, tmdbId: number, tvdbId?: number | null): Promise<DownloadProgress[]> {
+  // sorraa, quand il rapporte, dit lui-même où en sont ses téléchargements.
+  const reported = sorraaDownloadsFor(mediaType, tmdbId)
+  if (reported) return reported
   const index = await getLibrary()
   const hasQueue = mediaType === 'movie' ? index.movieQueue.length > 0 : index.seriesQueue.length > 0
   if (!hasQueue) return []

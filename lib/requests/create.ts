@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { errorMessage, NotConfiguredError, ServiceError } from '../http'
 import { getRadarr } from '../services/arr/radarr'
 import { getSonarr } from '../services/arr/sonarr'
+import { getSorraa, sorraaConfigured } from '../services/sorraa/client'
 import { getTmdb } from '../services/tmdb/client'
 import type { MediaType, TmdbDetails } from '../services/tmdb/types'
 import { seasonAvailability, seriesAvailability } from './availability'
@@ -109,9 +110,46 @@ async function requestShow(input: RequestInput, requester: Requester): Promise<R
   return { ok: true, message: `${label} de ${title} : demande envoyée, Sonarr cherche.`, created: created.length }
 }
 
+/**
+ * Envoyer la demande à sorraa par son API : un film, une série entière ou
+ * seulement quelques saisons. sorraa ajoute le titre, surveille ce qui est
+ * demandé et lance la recherche ; OnyxHub garde une ligne par film ou par saison.
+ */
+async function requestViaSorraa(input: RequestInput, requester: Requester): Promise<RequestOutcome> {
+  const details = await tmdbDetails(input.mediaType, input.tmdbId)
+  const { request } = await getSorraa().createRequest({
+    mediaType: input.mediaType,
+    tmdbId: input.tmdbId,
+    seasons: input.seasons,
+    // L'identifiant du compte Onyx quand on le connaît : le nom peut changer.
+    requester: { name: requester.name, ref: requester.id !== null ? String(requester.id) : requester.name },
+  })
+  const base = baseRow(input, details, requester, randomUUID(), new Date())
+  const title = `« ${base.title} »`
+
+  if (request.kind === 'movie') {
+    const created = insertMissing([{ ...base, seasonNumber: null, tvdbId: null, status: requestStatusFrom('approved', request.state) }])
+    return { ok: true, message: created.length === 0 ? `${title} est déjà demandé.` : `${title} est demandé : sorraa le cherche.`, created: created.length }
+  }
+
+  const tvdbId = details?.external_ids?.tvdb_id ?? null
+  const created = insertMissing(
+    (request.seasons ?? []).map((season) => ({
+      ...base,
+      seasonNumber: season.number,
+      tvdbId,
+      status: requestStatusFrom('approved', season.state),
+    })),
+  )
+  if (created.length === 0) return { ok: true, message: `Ces saisons de ${title} sont déjà demandées.`, created: 0 }
+  const label = formatSeasons(created.map((row) => row.seasonNumber ?? 0))
+  return { ok: true, message: `${label} de ${title} : demande envoyée, sorraa cherche.`, created: created.length }
+}
+
 export async function createRequest(input: RequestInput, requesterName: string, requesterId: number | null = null): Promise<RequestOutcome> {
   const requester: Requester = { name: requesterName, id: requesterId }
   try {
+    if (sorraaConfigured()) return await requestViaSorraa(input, requester)
     return input.mediaType === 'movie' ? await requestMovie(input, requester) : await requestShow(input, requester)
   } catch (error) {
     if (error instanceof NotConfiguredError) return { ok: false, status: 503, message: error.message }

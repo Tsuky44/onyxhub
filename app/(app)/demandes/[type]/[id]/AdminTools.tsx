@@ -13,7 +13,7 @@ import type { MediaRequestView } from '@/lib/requests/media-page'
 import { AVAILABILITY_LABELS, type AvailabilityStatus } from '@/lib/requests/status'
 import type { MediaType } from '@/lib/services/tmdb/types'
 import { deleteRequestsAction } from '../../liste/actions'
-import { automaticSearchAction, markAvailableAction, removeMediaAction } from './actions'
+import { automaticSearchAction, markAvailableAction, removeMediaAction, removeSeasonAction } from './actions'
 import { ReleaseSearch } from './ReleaseSearch'
 
 type Feedback = { ok: boolean; message: string } | null
@@ -32,6 +32,7 @@ export function AdminTools({
   requests,
   externalUrl,
   inLibrary,
+  usesSorraa,
 }: {
   mediaType: MediaType
   tmdbId: number
@@ -41,6 +42,8 @@ export function AdminTools({
   requests: MediaRequestView[]
   externalUrl: string | null
   inLibrary: boolean
+  /** Les demandes passent par sorraa : une saison peut être retirée complètement. */
+  usesSorraa: boolean
 }) {
   const router = useRouter()
   const [manageOpen, setManageOpen] = useState(false)
@@ -49,7 +52,8 @@ export function AdminTools({
   const [deleteFiles, setDeleteFiles] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [pending, startTransition] = useTransition()
-  const service = mediaType === 'movie' ? 'Radarr' : 'Sonarr'
+  const [seasonToRemove, setSeasonToRemove] = useState<number | null>(null)
+  const service = usesSorraa ? 'sorraa' : mediaType === 'movie' ? 'Radarr' : 'Sonarr'
 
   function run(action: () => Promise<{ ok: true; value: string } | { ok: false; message: string } | { ok: boolean; message: string }>, refresh = true) {
     startTransition(async () => {
@@ -139,6 +143,17 @@ export function AdminTools({
                     >
                       <TrashIcon size={18} aria-hidden />
                     </button>
+                    {usesSorraa && request.seasonNumber !== null && (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        aria-label={`Retirer complètement la saison ${request.seasonNumber}`}
+                        onClick={() => setSeasonToRemove(request.seasonNumber)}
+                        className="min-h-11 rounded-full px-3 text-footnote font-medium text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-error disabled:opacity-50"
+                      >
+                        Retirer la saison
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -160,6 +175,35 @@ export function AdminTools({
                 </Button>
               )}
             </div>
+            {seasonToRemove !== null && (
+              <div className="flex flex-col gap-3 rounded-panel border border-error/40 p-4">
+                <p className="text-body text-text">
+                  {service} ne cherchera plus la {formatSeasons([seasonToRemove]).toLowerCase()} de « {title} » et elle quittera les demandes.
+                </p>
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-body text-text-secondary">
+                  <input type="checkbox" checked={deleteFiles} onChange={(event) => setDeleteFiles(event.target.checked)} className="size-4 accent-accent" />
+                  Mettre aussi ses fichiers à la corbeille
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="ghost" onClick={() => setSeasonToRemove(null)}>
+                    Annuler
+                  </Button>
+                  <Button
+                    variant="danger"
+                    pending={pending}
+                    onClick={() =>
+                      run(async () => {
+                        const result = await removeSeasonAction(tmdbId, seasonToRemove, deleteFiles)
+                        if (result.ok) setSeasonToRemove(null)
+                        return result
+                      })
+                    }
+                  >
+                    Retirer la saison
+                  </Button>
+                </div>
+              </div>
+            )}
             {confirmRemove && (
               <div className="flex flex-col gap-3 rounded-panel border border-error/40 p-4">
                 <p className="text-body text-text">

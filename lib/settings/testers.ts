@@ -1,6 +1,7 @@
 import 'server-only'
 import { errorMessage, normalizeBaseUrl, ServiceError } from '../http'
 import { createRadarr } from '../services/arr/radarr'
+import { createSorraa } from '../services/sorraa/client'
 import { createSonarr } from '../services/arr/sonarr'
 import { pingOnyx } from '../services/onyx/auth'
 import { createProwlarr } from '../services/prowlarr'
@@ -45,6 +46,11 @@ const TESTERS: Partial<Record<ServiceId, (values: Values) => Promise<string>>> =
     await createTmdb(secret(values, 'tmdb_api_key', 'TMDB')).check()
     return 'La clé TMDB est acceptée.'
   },
+  sorraa: async (values) =>
+    responds(
+      'sorraa',
+      await createSorraa({ baseUrl: baseUrl(values, 'sorraa_url', 'sorraa'), apiKey: values.sorraa_api_key?.trim() || undefined }).version(),
+    ),
   radarr: async (values) => responds('Radarr', await createRadarr(arrConfig(values, 'radarr', 'Radarr')).version()),
   sonarr: async (values) => responds('Sonarr', await createSonarr(arrConfig(values, 'sonarr', 'Sonarr')).version()),
   prowlarr: async (values) => responds('Prowlarr', await createProwlarr(arrConfig(values, 'prowlarr', 'Prowlarr')).version()),

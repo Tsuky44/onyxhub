@@ -63,8 +63,10 @@ export function errorDetailFrom(body: string): string | null {
   try {
     const parsed: unknown = JSON.parse(body)
     const first = Array.isArray(parsed) ? parsed[0] : parsed
-    const record = first as { errorMessage?: unknown; message?: unknown } | null
-    const message = typeof record?.errorMessage === 'string' ? record.errorMessage : typeof record?.message === 'string' ? record.message : null
+    const record = first as { errorMessage?: unknown; message?: unknown; detail?: unknown } | null
+    // `detail` : le format problem+json de sorraa.
+    const message =
+      typeof record?.errorMessage === 'string' ? record.errorMessage : typeof record?.message === 'string' ? record.message : typeof record?.detail === 'string' ? record.detail : null
     return message ? message.slice(0, 200) : null
   } catch {
     // Corps non JSON (page HTML d'un proxy…) : rien d'utile à montrer.

@@ -113,6 +113,17 @@ export const SERVICES = [
     ],
   },
   {
+    id: 'sorraa',
+    label: 'sorraa',
+    description:
+      "Quand l'URL est renseignée, les demandes (film, série ou seulement quelques saisons) et leur retrait passent par l'API de sorraa à la place de Radarr et Sonarr.",
+    testable: true,
+    fields: [
+      { key: 'sorraa_url', label: 'URL', kind: 'url', placeholder: 'http://192.168.1.10:7878' },
+      { key: 'sorraa_api_key', label: 'Clé API', kind: 'secret', optional: true, help: "Vide tant que sorraa n'exige pas de clé." },
+    ],
+  },
+  {
     id: 'qbittorrent',
     label: 'qBittorrent',
     description: 'Le client de téléchargement suivi dans Téléchargements.',
