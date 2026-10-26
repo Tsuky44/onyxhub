@@ -3,6 +3,7 @@ import { ServiceError } from '../http'
 import { getRadarr } from '../services/arr/radarr'
 import { getSonarr } from '../services/arr/sonarr'
 import type { ArrRelease, SonarrSeries } from '../services/arr/types'
+import { getSorraa, sorraaConfigured, type SorraaRejectionReason, type SorraaRelease, type SorraaUnit } from '../services/sorraa/client'
 import { getTmdb } from '../services/tmdb/client'
 import type { MediaType } from '../services/tmdb/types'
 import { invalidateLibrary } from './library'
@@ -23,6 +24,66 @@ function notInLibrary(service: string): ServiceError {
   return new ServiceError(service, `${service} ne connaît pas encore ce média : demande-le d'abord.`)
 }
 
+/** Le média chez sorraa, ou une erreur « demande-le d'abord ». */
+async function sorraaMediaId(mediaType: MediaType, tmdbId: number): Promise<number> {
+  const mediaId = await getSorraa().mediaId(mediaType, tmdbId)
+  if (mediaId === null) throw notInLibrary('sorraa')
+  return mediaId
+}
+
+/** Les unités du média chez sorraa ; aucune s'il ne le connaît pas ou ne répond pas (la liste d'épisodes reste lisible). */
+async function sorraaUnits(tmdbId: number): Promise<SorraaUnit[]> {
+  try {
+    const sorraa = getSorraa()
+    const mediaId = await sorraa.mediaId('tv', tmdbId)
+    return mediaId === null ? [] : await sorraa.units(mediaId)
+  } catch {
+    return []
+  }
+}
+
+const REJECTIONS: Record<SorraaRejectionReason, string> = {
+  quality_not_accepted: "qualité refusée par le profil",
+  upgrades_not_allowed: 'le profil interdit de remplacer le fichier existant',
+  cutoff_met: 'la qualité souhaitée est déjà atteinte',
+  not_an_upgrade: "n'améliore pas le fichier existant",
+  language_not_wanted: 'langue non souhaitée',
+  language_required: 'aucune langue souhaitée',
+  format_score_too_low: 'score des formats trop bas',
+  wrong_title: 'ce n\'est pas le bon titre',
+  wrong_year: "ce n'est pas la bonne année",
+  wrong_unit: "ne contient pas le film, la saison ou l'épisode voulu",
+  blocklisted: 'déjà échouée pour ce média',
+  size_too_small: 'trop petite pour sa qualité',
+  size_too_large: 'trop grosse pour sa qualité',
+  undersized_for_quality: 'trop petite pour la qualité annoncée',
+  seeders_too_low: 'pas assez de sources',
+  pack_not_enough_upgrades: "le pack n'améliore pas assez d'épisodes",
+  upgrade_paused: "mise à niveau en pause après un échec",
+}
+
+function fromSorraa(release: SorraaRelease): ArrRelease {
+  const published = release.publishedAt ? Date.parse(release.publishedAt) : Number.NaN
+  return {
+    guid: release.id,
+    indexerId: release.indexerId,
+    indexer: release.indexer,
+    title: release.name,
+    size: release.size,
+    seeders: release.seeders,
+    leechers: release.leechers,
+    protocol: release.protocol,
+    ageHours: Number.isNaN(published) ? undefined : Math.max(0, (Date.now() - published) / 3_600_000),
+    publishDate: release.publishedAt,
+    quality: { quality: { name: release.release.quality } },
+    languages: release.release.languages.map((language, index) => ({ id: index, name: language.toUpperCase() })),
+    rejected: !release.decision.accepted,
+    rejections: release.decision.rejections.map((rejection) => REJECTIONS[rejection.reason] ?? rejection.reason),
+    infoUrl: release.infoUrl,
+    customFormatScore: release.decision.formatScore,
+  }
+}
+
 export interface SeasonEpisode {
   episodeNumber: number
   name: string
@@ -32,12 +93,29 @@ export interface SeasonEpisode {
   runtime: number | null
   /** `null` : Sonarr ne suit pas la série. */
   hasFile: boolean | null
-  /** L'épisode côté Sonarr (recherche interactive d'un épisode). */
-  sonarrEpisodeId: number | null
+  /** L'épisode côté sorraa ou Sonarr (recherche interactive d'un épisode). */
+  episodeId: number | null
 }
 
-/** Les épisodes d'une saison (TMDB), avec ce que Sonarr en a. */
+/** Les épisodes d'une saison (TMDB), avec ce que sorraa ou Sonarr en a. */
 export async function seasonEpisodes(tmdbId: number, seasonNumber: number, tvdbId?: number | null): Promise<SeasonEpisode[]> {
+  if (sorraaConfigured()) {
+    const [season, units] = await Promise.all([getTmdb().season(tmdbId, seasonNumber), sorraaUnits(tmdbId)])
+    const byNumber = new Map(units.filter((unit) => unit.kind === 'episode' && unit.seasonNumber === seasonNumber).map((unit) => [unit.episodeNumber, unit]))
+    return season.episodes.map((episode) => {
+      const tracked = byNumber.get(episode.episode_number)
+      return {
+        episodeNumber: episode.episode_number,
+        name: episode.name,
+        overview: episode.overview || null,
+        airDate: episode.air_date,
+        stillPath: episode.still_path,
+        runtime: episode.runtime ?? null,
+        hasFile: units.length > 0 ? tracked?.status === 'downloaded' || tracked?.status === 'upgradable' : null,
+        episodeId: tracked?.id ?? null,
+      }
+    })
+  }
   const [season, series] = await Promise.all([getTmdb().season(tmdbId, seasonNumber), seriesFor(tmdbId, tvdbId).catch(() => null)])
   const sonarrEpisodes = series?.id ? (await getSonarr().episodes(series.id).catch(() => [])).filter((episode) => episode.seasonNumber === seasonNumber) : []
   const byNumber = new Map(sonarrEpisodes.map((episode) => [episode.episodeNumber, episode]))
@@ -51,7 +129,7 @@ export async function seasonEpisodes(tmdbId: number, seasonNumber: number, tvdbI
       stillPath: episode.still_path,
       runtime: episode.runtime ?? null,
       hasFile: series?.id ? (tracked?.hasFile ?? false) : null,
-      sonarrEpisodeId: tracked?.id ?? null,
+      episodeId: tracked?.id ?? null,
     }
   })
 }
@@ -60,6 +138,17 @@ export type ReleaseScope = { seasonNumber?: number; episodeId?: number }
 
 /** Recherche interactive : les releases que l'*arr trouve, les plus partagées d'abord, les refusées à la fin. */
 export async function searchReleases(mediaType: MediaType, tmdbId: number, scope: ReleaseScope = {}, tvdbId?: number | null): Promise<ArrRelease[]> {
+  if (sorraaConfigured()) {
+    const sorraa = getSorraa()
+    const mediaId = await sorraaMediaId(mediaType, tmdbId)
+    let unitId = scope.episodeId
+    if (unitId === undefined && scope.seasonNumber !== undefined) {
+      const season = (await sorraa.units(mediaId)).find((unit) => unit.kind === 'season' && unit.seasonNumber === scope.seasonNumber)
+      if (!season) throw new ServiceError('sorraa', `sorraa ne connaît pas la saison ${scope.seasonNumber}.`)
+      unitId = season.id
+    }
+    return (await sorraa.searchReleases(mediaId, unitId)).map(fromSorraa)
+  }
   let releases: ArrRelease[]
   if (mediaType === 'movie') {
     const movie = await getRadarr().movieByTmdbId(tmdbId)
@@ -75,13 +164,19 @@ export async function searchReleases(mediaType: MediaType, tmdbId: number, scope
 }
 
 export async function grabRelease(mediaType: MediaType, release: Pick<ArrRelease, 'guid' | 'indexerId'>): Promise<void> {
-  if (mediaType === 'movie') await getRadarr().grabRelease(release)
+  if (sorraaConfigured()) await getSorraa().grab(release.guid)
+  else if (mediaType === 'movie') await getRadarr().grabRelease(release)
   else await getSonarr().grabRelease(release)
   invalidateLibrary()
 }
 
 /** Recherche automatique : le film, une saison, ou toute la série. */
 export async function automaticSearch(mediaType: MediaType, tmdbId: number, seasonNumber?: number, tvdbId?: number | null): Promise<void> {
+  if (sorraaConfigured()) {
+    // sorraa cherche tout ce qui manque au média, pas une saison à part.
+    await getSorraa().search(await sorraaMediaId(mediaType, tmdbId))
+    return
+  }
   if (mediaType === 'movie') {
     const movie = await getRadarr().movieByTmdbId(tmdbId)
     if (!movie?.id) throw notInLibrary('Radarr')

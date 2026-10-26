@@ -13,10 +13,11 @@ import { mediaDownloads, type DownloadProgress } from './downloads'
 import { yearOf } from './format'
 import { findSeries, getLibrary } from './library'
 import { mediaAvailability } from './media-availability'
-import { onyxLibrary, onyxMediaId, onyxWatchUrl, withOnyxPresence } from './onyx-presence'
+import { onyxLibrary, onyxMediaId, onyxWatchUrl } from './onyx-presence'
 import { requestsForMedia } from './repository'
-import { waitingFor } from './sorraa-waiting'
-import type { RequestWaiting } from './waiting'
+import { sorraaRequestsFor } from './sorraa-waiting'
+import { presentedAvailability } from './sorraa-status'
+import { earliestWaiting, type RequestWaiting } from './waiting'
 import type { AvailabilityStatus, RequestStatus } from './status'
 import { isInWatchLater } from './watch-later'
 
@@ -112,19 +113,19 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
   const details = await getTmdb().details(mediaType, tmdbId)
   const tvdbId = details.external_ids?.tvdb_id ?? null
 
-  const [arrAvailability, recommendations, similar, downloads, external, onyx, waiting] = await Promise.all([
+  const [arrAvailability, recommendations, similar, downloads, external, onyx, sorraaRequests] =await Promise.all([
     mediaAvailability(mediaType, tmdbId, tvdbId),
     withStatus(details.recommendations?.results.slice(0, 20) ?? [], mediaType),
     withStatus(details.similar?.results.slice(0, 20) ?? [], mediaType),
     mediaDownloads(mediaType, tmdbId, tvdbId).catch(() => []),
     viewer.isAdmin ? externalUrl(mediaType, tmdbId, tvdbId) : Promise.resolve(null),
     onyxLibrary(),
-    waitingFor(mediaType, tmdbId),
+    sorraaRequestsFor(mediaType, tmdbId),
   ])
   const onyxId = onyxMediaId(onyx, mediaType, tmdbId)
-  const presentStatus = withOnyxPresence(arrAvailability.status, onyxId !== null)
-  const availability =
-    presentStatus === arrAvailability.status ? arrAvailability : { ...arrAvailability, status: presentStatus, available: true }
+  const waiting = sorraaRequests ? earliestWaiting(sorraaRequests) : null
+  const availability = presentedAvailability(arrAvailability, mediaType, sorraaRequests, onyxId !== null)
+  const presentStatus = availability.status
 
   const rows = requestsForMedia(mediaType, tmdbId)
   const requestedSeasons = new Set(rows.map((row) => row.seasonNumber))

@@ -21,6 +21,51 @@ export interface SorraaRequest {
   waiting?: { reason: string; attempts: number; lastAttemptAt: string; nextAttemptAt: string }
 }
 
+/** Un film, une saison ou un épisode du média, avec ce que sorraa en sait. */
+export interface SorraaUnit {
+  id: number
+  kind: 'movie' | 'season' | 'episode'
+  seasonNumber?: number
+  episodeNumber?: number
+  status?: 'upcoming' | 'missing' | 'downloaded' | 'upgradable'
+}
+
+export type SorraaRejectionReason =
+  | 'quality_not_accepted'
+  | 'upgrades_not_allowed'
+  | 'cutoff_met'
+  | 'not_an_upgrade'
+  | 'language_not_wanted'
+  | 'language_required'
+  | 'format_score_too_low'
+  | 'wrong_title'
+  | 'wrong_year'
+  | 'wrong_unit'
+  | 'blocklisted'
+  | 'size_too_small'
+  | 'size_too_large'
+  | 'undersized_for_quality'
+  | 'seeders_too_low'
+  | 'pack_not_enough_upgrades'
+  | 'upgrade_paused'
+
+/** Une release que les indexeurs de sorraa proposent, avec sa décision. */
+export interface SorraaRelease {
+  /** Nomme la release pendant une demi-heure : de quoi la télécharger. */
+  id: string
+  indexerId: number
+  indexer: string
+  protocol: 'usenet' | 'torrent'
+  name: string
+  size: number
+  publishedAt?: string
+  seeders?: number
+  leechers?: number
+  infoUrl?: string
+  release: { quality: string; languages: string[] }
+  decision: { accepted: boolean; formatScore: number; rejections: { reason: SorraaRejectionReason; actual?: number; limit?: number; score?: number; minimum?: number }[] }
+}
+
 export interface SorraaRequestInput {
   mediaType: MediaType
   tmdbId: number
@@ -45,6 +90,14 @@ export interface Sorraa {
   removeMedia(mediaId: number, deleteFiles: boolean): Promise<void>
   /** Sort une saison de la recherche et des demandes ; ses fichiers vont à la corbeille avec `deleteFiles`. */
   removeSeason(mediaId: number, season: number, deleteFiles: boolean): Promise<void>
+  /** Les films, saisons et épisodes du média. */
+  units(mediaId: number): Promise<SorraaUnit[]>
+  /** Recherche interactive : interroge les indexeurs pour le média ou l'une de ses unités, sans rien télécharger. */
+  searchReleases(mediaId: number, unitId?: number): Promise<SorraaRelease[]>
+  /** Envoie au client de téléchargement une release trouvée par `searchReleases`. */
+  grab(releaseId: string): Promise<void>
+  /** Lance la recherche automatique de ce qui manque au média. */
+  search(mediaId: number): Promise<void>
 }
 
 export interface SorraaConfig {
@@ -134,6 +187,31 @@ export function createSorraa(config: SorraaConfig): Sorraa {
 
     async removeSeason(mediaId, season, deleteFiles) {
       await call(withQuery(`${root}/media/${mediaId}/seasons/${season}`, { deleteFiles: deleteFiles ? 'true' : undefined }), { method: 'DELETE' })
+    },
+
+    async units(mediaId) {
+      const media = await requestJson<{ units: SorraaUnit[] }>(SERVICE, `${root}/media/${mediaId}`, { headers, readErrorDetail: true })
+      return media.units
+    },
+
+    async searchReleases(mediaId, unitId) {
+      const response = await request(SERVICE, `${root}/media/${mediaId}/release-searches`, {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify(unitId === undefined ? {} : { unitId }),
+        readErrorDetail: true,
+        // Chaque indexeur est interrogé à son tour : ça peut durer.
+        timeoutMs: 120_000,
+      })
+      return ((await response.json()) as { releases: SorraaRelease[] }).releases
+    },
+
+    async grab(releaseId) {
+      await call(`${root}/grabs`, { method: 'POST', body: { releaseId } })
+    },
+
+    async search(mediaId) {
+      await call(`${root}/media/${mediaId}/searches`, { method: 'POST' })
     },
   }
 }

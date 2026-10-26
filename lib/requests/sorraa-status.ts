@@ -4,7 +4,9 @@ import type { MediaRequestRow } from '../db/schema'
 import { errorMessage } from '../http'
 import { getSorraa, type SorraaRequest } from '../services/sorraa/client'
 import type { OnyxLibraryIndex } from '../services/onyx/library'
-import { onyxMediaId } from './onyx-presence'
+import type { MediaType } from '../services/tmdb/types'
+import type { Availability, SeasonAvailability } from './availability'
+import { onyxMediaId, withOnyxPresence } from './onyx-presence'
 import { requestStatusFrom, type AvailabilityStatus, type RequestStatus } from './status'
 
 /**
@@ -30,6 +32,22 @@ export function statusFromSorraaAndOnyx(
   return requestStatusFrom(current, reported === 'available' ? 'processing' : reported)
 }
 
+/**
+ * Ce que la fiche et les cartes montrent d'un média ou d'une saison : même
+ * règle que pour les demandes, mais sans demande à faire avancer. `fallback` est
+ * ce que disent Radarr/Sonarr quand sorraa ne dit rien. Pure.
+ */
+export function presentedStatus(
+  reported: AvailabilityStatus | undefined,
+  inOnyx: boolean,
+  isMovie: boolean,
+  fallback: AvailabilityStatus,
+): AvailabilityStatus {
+  if (reported === undefined) return withOnyxPresence(fallback, inOnyx)
+  if (inOnyx && (isMovie || reported === 'available')) return 'available'
+  return reported === 'available' ? 'processing' : reported
+}
+
 const ORDER: readonly AvailabilityStatus[] = ['unknown', 'pending', 'processing', 'partial', 'available']
 const furthest = (states: readonly AvailabilityStatus[]): AvailabilityStatus | undefined =>
   states.reduce<AvailabilityStatus | undefined>((best, state) => (best === undefined || ORDER.indexOf(state) > ORDER.indexOf(best) ? state : best), undefined)
@@ -38,6 +56,34 @@ const furthest = (states: readonly AvailabilityStatus[]): AvailabilityStatus | u
 export function reportedState(row: Pick<MediaRequestRow, 'seasonNumber'>, requests: readonly SorraaRequest[]): AvailabilityStatus | undefined {
   if (row.seasonNumber === null) return furthest(requests.map((request) => request.state))
   return furthest(requests.flatMap((request) => request.seasons?.filter((season) => season.number === row.seasonNumber).map((season) => season.state) ?? []))
+}
+
+/**
+ * La disponibilité de la fiche : celle de Radarr/Sonarr, corrigée par sorraa
+ * (demandé, en cours, partiel) et par Onyx (disponible). Sans demande chez
+ * sorraa, ou sorraa muet, elle ne change que par la présence dans Onyx.
+ */
+export function presentedAvailability(
+  arr: Availability,
+  mediaType: MediaType,
+  requests: readonly SorraaRequest[] | null,
+  inOnyx: boolean,
+): Availability {
+  const isMovie = mediaType === 'movie'
+  const known = requests && requests.length > 0 ? requests : null
+  const status = presentedStatus(known ? furthest(known.map((request) => request.state)) : undefined, inOnyx, isMovie, arr.status)
+
+  const numbers = new Set([...arr.seasons.map((season) => season.seasonNumber), ...(known ?? []).flatMap((request) => request.seasons?.map((season) => season.number) ?? [])])
+  const seasons = [...numbers]
+    .sort((a, b) => a - b)
+    .map((seasonNumber): SeasonAvailability => {
+      const base = arr.seasons.find((season) => season.seasonNumber === seasonNumber) ?? { seasonNumber, status: 'unknown', available: false, totalEpisodes: 0, episodeFileCount: 0 }
+      const next = presentedStatus(known ? reportedState({ seasonNumber }, known) : undefined, inOnyx, false, base.status)
+      return { ...base, status: next, available: next === 'available' || next === 'partial' || base.available }
+    })
+
+  if (status === arr.status && seasons.every((season, index) => season.status === arr.seasons[index]?.status)) return arr
+  return { status, available: status === 'available' || status === 'partial', seasons }
 }
 
 /** Les nouveaux statuts de ces demandes d'après sorraa et Onyx. Un échec de sorraa pour un média laisse ses lignes à Onyx seul. */

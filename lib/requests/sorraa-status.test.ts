@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { reportedState, statusFromSorraaAndOnyx } from './sorraa-status'
+import { presentedAvailability, reportedState, statusFromSorraaAndOnyx } from './sorraa-status'
 
 describe('statut d une demande : sorraa avant la dispo, Onyx pour la dispo', () => {
   it('suit sorraa tant que le titre n est pas dans Onyx', () => {
@@ -24,6 +24,31 @@ describe('statut d une demande : sorraa avant la dispo, Onyx pour la dispo', () 
 
   it('ne change rien sans information', () => {
     expect(statusFromSorraaAndOnyx('pending', true, undefined, null)).toBe('pending')
+  })
+})
+
+describe('statut affiché sur la fiche', () => {
+  const unknown = { status: 'unknown' as const, available: false, seasons: [] }
+  const movie = (state: 'pending' | 'processing' | 'available') => [{ id: 1, mediaId: 1, kind: 'movie' as const, tmdbId: 5, state }]
+
+  it('montre « demandé » quand sorraa a la demande que Radarr/Sonarr ne voient pas, pour ne pas rouvrir le bouton', () => {
+    expect(presentedAvailability(unknown, 'movie', movie('pending'), false).status).toBe('pending')
+  })
+
+  it('attend Onyx pour dire disponible', () => {
+    expect(presentedAvailability(unknown, 'movie', movie('available'), false).status).toBe('processing')
+    expect(presentedAvailability(unknown, 'movie', movie('available'), true).status).toBe('available')
+  })
+
+  it('ne change rien sans demande chez sorraa, sauf la présence dans Onyx', () => {
+    expect(presentedAvailability(unknown, 'movie', null, false)).toBe(unknown)
+    expect(presentedAvailability(unknown, 'movie', [], true).status).toBe('available')
+  })
+
+  it('suit les saisons de sorraa', () => {
+    const series = [{ id: 1, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'pending' as const, seasons: [{ number: 2, state: 'pending' as const }] }]
+    const result = presentedAvailability(unknown, 'tv', series, false)
+    expect(result.seasons.map((season) => [season.seasonNumber, season.status])).toEqual([[2, 'pending']])
   })
 })
 

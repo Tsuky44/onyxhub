@@ -1,7 +1,7 @@
 import 'server-only'
 import { eachLimited } from '../concurrency'
 import { errorMessage } from '../http'
-import { getSorraa, sorraaConfigured } from '../services/sorraa/client'
+import { getSorraa, sorraaConfigured, type SorraaRequest } from '../services/sorraa/client'
 import type { MediaType } from '../services/tmdb/types'
 import type { RequestListPage } from './list'
 import { earliestWaiting, type RequestWaiting } from './waiting'
@@ -12,11 +12,17 @@ import { earliestWaiting, type RequestWaiting } from './waiting'
  * fiche et la liste s'affichent sans cette ligne plutôt que de tomber.
  */
 export async function waitingFor(mediaType: MediaType, tmdbId: number): Promise<RequestWaiting | null> {
+  const requests = await sorraaRequestsFor(mediaType, tmdbId)
+  return requests ? earliestWaiting(requests) : null
+}
+
+/** Les demandes de sorraa pour ce titre ; `null` s'il n'est pas branché ou ne répond pas. */
+export async function sorraaRequestsFor(mediaType: MediaType, tmdbId: number): Promise<SorraaRequest[] | null> {
   if (!sorraaConfigured()) return null
   try {
-    return earliestWaiting(await getSorraa().requestsFor(mediaType, tmdbId))
+    return await getSorraa().requestsFor(mediaType, tmdbId)
   } catch (error) {
-    console.warn(`[demandes] attente ${mediaType}/${tmdbId} : ${errorMessage(error)}`)
+    console.warn(`[demandes] sorraa ${mediaType}/${tmdbId} : ${errorMessage(error)}`)
     return null
   }
 }

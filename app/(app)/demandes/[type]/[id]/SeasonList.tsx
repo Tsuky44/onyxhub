@@ -166,12 +166,12 @@ function Season({
                       {meta && <p className="mt-0.5 text-footnote text-text-muted">{meta}</p>}
                       {episode.overview && <p className="mt-1 line-clamp-2 text-footnote text-pretty text-text-secondary">{episode.overview}</p>}
                     </div>
-                    {isAdmin && episode.sonarrEpisodeId && (
+                    {isAdmin && episode.episodeId && (
                       <button
                         type="button"
                         aria-label={`Recherche interactive de l'épisode ${episode.episodeNumber}`}
                         onClick={() =>
-                          onSearch({ scope: { episodeId: episode.sonarrEpisodeId ?? undefined }, label: `${title} · S${season.seasonNumber}E${episode.episodeNumber}` })
+                          onSearch({ scope: { episodeId: episode.episodeId ?? undefined }, label: `${title} · S${season.seasonNumber}E${episode.episodeNumber}` })
                         }
                         className="flex size-11 shrink-0 items-center justify-center self-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text"
                       >
