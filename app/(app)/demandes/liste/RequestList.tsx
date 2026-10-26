@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/cn'
 import { ListIcon, RefreshIcon, SyncIcon, TrashIcon } from '@/lib/icons'
 import { formatRelative, formatSeasons, mediaHref } from '@/lib/requests/format'
+import { waitingText } from '@/lib/requests/waiting'
 import type { RequestGroup, RequestListPage } from '@/lib/requests/list'
 import { deleteRequestsAction, loadRequestPageAction, refreshStatusesAction, syncRequestsAction } from './actions'
 
@@ -194,6 +195,7 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
                       {' · '}
                       {formatRelative(new Date(group.requestedAt))}
                     </span>
+                    {group.waiting && <span className="block truncate text-footnote text-warning">{waitingText(group.waiting)}</span>}
                   </span>
                 </Link>
                 <RequestStatusBadge status={group.status} />

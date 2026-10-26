@@ -5,6 +5,7 @@ import { getViewer } from '@/lib/auth/viewer'
 import { errorMessage } from '@/lib/http'
 import { loadRequestPage, parseListFilters, type RequestListPage } from '@/lib/requests/list'
 import { removeRequests } from '@/lib/requests/remove'
+import { withWaiting } from '@/lib/requests/sorraa-waiting'
 import { importFromArr, refreshStatuses } from '@/lib/requests/sync'
 
 /** Les actions de la liste des demandes. Supprimer et synchroniser sont réservés à l'admin, comme dans MediaHub. */
@@ -12,7 +13,7 @@ import { importFromArr, refreshStatuses } from '@/lib/requests/sync'
 export async function loadRequestPageAction(search: string, offset: number): Promise<RequestListPage> {
   const viewer = await getViewer()
   const safeOffset = Number.isInteger(offset) && offset >= 0 ? offset : 0
-  return loadRequestPage(parseListFilters(new URLSearchParams(typeof search === 'string' ? search : ''), viewer.name), safeOffset)
+  return withWaiting(loadRequestPage(parseListFilters(new URLSearchParams(typeof search === 'string' ? search : ''), viewer.name), safeOffset))
 }
 
 export async function deleteRequestsAction(ids: number[]): Promise<{ ok: boolean; message: string }> {

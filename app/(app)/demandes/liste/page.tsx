@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { getViewer } from '@/lib/auth/viewer'
 import { errorMessage } from '@/lib/http'
 import { loadRequestPage, parseListFilters } from '@/lib/requests/list'
+import { withWaiting } from '@/lib/requests/sorraa-waiting'
 import { refreshStatuses } from '@/lib/requests/sync'
 import { RequestsNav } from '../RequestsNav'
 import { ListFilters } from './ListFilters'
@@ -20,7 +21,7 @@ export default async function RequestTrackingPage({ searchParams }: { searchPara
   // Comme MediaHub à chaque affichage : les statuts rattrapent Radarr/Sonarr
   // (index de bibliothèque partagé, donc au plus quatre appels par minute).
   await refreshStatuses().catch((error: unknown) => console.warn(`[demandes] statuts : ${errorMessage(error)}`))
-  const initial = loadRequestPage(parseListFilters(new URLSearchParams(search), viewer.name), 0)
+  const initial = await withWaiting(loadRequestPage(parseListFilters(new URLSearchParams(search), viewer.name), 0))
 
   return (
     <>

@@ -16,6 +16,7 @@ import { getTmdb } from '@/lib/services/tmdb/client'
 import type { MediaType } from '@/lib/services/tmdb/types'
 import { tmdbImageUrl } from '@/lib/tmdb-image'
 import { sorraaConfigured } from '@/lib/services/sorraa/client'
+import { waitingText } from '@/lib/requests/waiting'
 import { AdminTools } from './AdminTools'
 import { DownloadPanel } from './DownloadPanel'
 import { SubscribeButton, TrailerButton, WatchLaterButton } from './MediaButtons'
@@ -156,6 +157,8 @@ export default async function MediaPage({ params }: { params: Params }) {
                 usesSorraa={sorraaConfigured()}
               />
             )}
+
+            {data.waiting && <p className="text-callout text-warning">{waitingText(data.waiting)}</p>}
 
             <DownloadPanel
               mediaType={mediaType}

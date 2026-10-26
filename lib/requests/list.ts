@@ -2,6 +2,7 @@ import 'server-only'
 import type { MediaType } from '../services/tmdb/types'
 import { listRequestBatches, type RequestListFilters } from './repository'
 import { furthestStatus, isRequestStatus, type RequestStatus } from './status'
+import type { RequestWaiting } from './waiting'
 
 /**
  * La liste des demandes : une ligne par lot (un film, ou les saisons
@@ -24,6 +25,8 @@ export interface RequestGroup {
   requester: string
   /** ISO 8601 : le composant client reçoit une chaîne. */
   requestedAt: string
+  /** Pourquoi la demande attend, d'après sorraa ; rempli par `withWaiting`, `null` sinon. */
+  waiting: RequestWaiting | null
 }
 
 export interface RequestListPage {
@@ -61,6 +64,7 @@ export function loadRequestPage(filters: RequestListFilters, offset: number): Re
       status: furthestStatus(rows.map((row) => row.status)),
       requester: first.requester,
       requestedAt: new Date(Math.max(...rows.map((row) => row.requestedAt.getTime()))).toISOString(),
+      waiting: null,
     }
   })
   return { groups, nextOffset: offset + PAGE_SIZE, hasMore }

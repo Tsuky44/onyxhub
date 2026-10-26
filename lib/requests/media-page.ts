@@ -15,6 +15,8 @@ import { findSeries, getLibrary } from './library'
 import { mediaAvailability } from './media-availability'
 import { onyxLibrary, onyxMediaId, onyxWatchUrl, withOnyxPresence } from './onyx-presence'
 import { requestsForMedia } from './repository'
+import { waitingFor } from './sorraa-waiting'
+import type { RequestWaiting } from './waiting'
 import type { AvailabilityStatus, RequestStatus } from './status'
 import { isInWatchLater } from './watch-later'
 
@@ -57,6 +59,8 @@ export interface MediaPageData {
   recommendations: CatalogItem[]
   similar: CatalogItem[]
   downloads: DownloadProgress[]
+  /** Pourquoi la demande attend, d'après sorraa ; `null` quand rien n'attend. */
+  waiting: RequestWaiting | null
   /** La fiche dans Radarr/Sonarr, pour l'admin seulement. */
   externalUrl: string | null
   /** Le lien qui ouvre ce titre dans l'app web d'Onyx, quand Onyx l'a (ADR-0010). */
@@ -108,13 +112,14 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
   const details = await getTmdb().details(mediaType, tmdbId)
   const tvdbId = details.external_ids?.tvdb_id ?? null
 
-  const [arrAvailability, recommendations, similar, downloads, external, onyx] = await Promise.all([
+  const [arrAvailability, recommendations, similar, downloads, external, onyx, waiting] = await Promise.all([
     mediaAvailability(mediaType, tmdbId, tvdbId),
     withStatus(details.recommendations?.results.slice(0, 20) ?? [], mediaType),
     withStatus(details.similar?.results.slice(0, 20) ?? [], mediaType),
     mediaDownloads(mediaType, tmdbId, tvdbId).catch(() => []),
     viewer.isAdmin ? externalUrl(mediaType, tmdbId, tvdbId) : Promise.resolve(null),
     onyxLibrary(),
+    waitingFor(mediaType, tmdbId),
   ])
   const onyxId = onyxMediaId(onyx, mediaType, tmdbId)
   const presentStatus = withOnyxPresence(arrAvailability.status, onyxId !== null)
@@ -157,6 +162,7 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
     recommendations,
     similar,
     downloads,
+    waiting: presentStatus === 'available' ? null : waiting,
     externalUrl: external,
     onyxUrl: onyxId === null ? null : onyxWatchUrl(mediaType, onyxId),
   }

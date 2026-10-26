@@ -17,6 +17,8 @@ export interface SorraaRequest {
   state: SorraaState
   /** Absent pour un film. */
   seasons?: { number: number; state: SorraaState }[]
+  /** Présent quand les recherches n'ont rien trouvé que le profil accepte : pourquoi la demande attend, en français. */
+  waiting?: { reason: string; attempts: number; lastAttemptAt: string; nextAttemptAt: string }
 }
 
 export interface SorraaRequestInput {
