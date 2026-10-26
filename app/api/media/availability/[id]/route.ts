@@ -3,6 +3,8 @@ import { resolveCaller } from '@/lib/auth/caller'
 import { errorMessage } from '@/lib/http'
 import { availabilityPayload } from '@/lib/requests/contract'
 import { mediaAvailability } from '@/lib/requests/media-availability'
+import { waitingFor } from '@/lib/requests/sorraa-waiting'
+import { waitingText } from '@/lib/requests/waiting'
 
 /**
  * `GET /api/media/availability/:id?type=movie|tv` : la disponibilité d'un
@@ -18,7 +20,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const type = new URL(request.url).searchParams.get('type') === 'tv' ? 'tv' : 'movie'
 
   try {
-    return NextResponse.json(availabilityPayload(await mediaAvailability(type, tmdbId)))
+    const availability = await mediaAvailability(type, tmdbId)
+    // Pourquoi la demande attend (ajout facultatif : Onyx l'ignore s'il ne le connaît pas).
+    const waiting = availability.status === 'available' ? null : await waitingFor(type, tmdbId)
+    return NextResponse.json({
+      ...availabilityPayload(availability),
+      ...(waiting ? { waiting: { reason: waiting.reason, attempts: waiting.attempts, nextAttemptAt: waiting.nextAttemptAt, message: waitingText(waiting) } } : {}),
+    })
   } catch (error) {
     console.error(`[disponibilité] ${type}/${tmdbId} : ${errorMessage(error)}`)
     // Même forme qu'un succès : le serveur Onyx lit `status` et retombe sur « unknown ».
