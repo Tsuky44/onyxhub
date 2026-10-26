@@ -42,7 +42,8 @@ describe('événements de sorraa', () => {
   it('fait suivre à chaque saison demandée l état de cette saison', () => {
     const event = firstEvent(batch)
     const changes = statusChangesFromSorraa([row(1, 1, 'processing'), row(2, 2, 'processing'), row(3, 3, 'pending')], event)
-    expect(Object.fromEntries(changes)).toEqual({ 1: 'available', 2: 'partial' })
+    // La saison 1, « disponible » chez sorraa, reste « en cours » : seul Onyx dit « disponible ».
+    expect(Object.fromEntries(changes)).toEqual({ 2: 'partial' })
   })
 
   it('ne fait pas reculer une demande dont la saison attend', () => {

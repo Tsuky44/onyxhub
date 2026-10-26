@@ -1,6 +1,7 @@
 import type { MediaRequestRow } from '../db/schema'
 import type { DownloadProgress } from '../requests/downloads'
-import { requestStatusFrom, type AvailabilityStatus, type RequestStatus } from '../requests/status'
+import { statusFromSorraaAndOnyx } from '../requests/sorraa-status'
+import type { AvailabilityStatus, RequestStatus } from '../requests/status'
 import type { ArrEvent } from '../requests/webhook-payload'
 import type { MediaType } from '../services/tmdb/types'
 
@@ -89,7 +90,8 @@ export function statusChangesFromSorraa(rows: readonly MediaRequestRow[], event:
     const availability = row.seasonNumber === null ? request.state : request.seasons.find((season) => season.number === row.seasonNumber)?.state
     // Une saison que la demande de sorraa ne couvre pas n'est pas son affaire.
     if (!availability) continue
-    const next = requestStatusFrom(row.status, availability)
+    // Sans session, Onyx ne peut pas confirmer : « disponible » attend son index.
+    const next = statusFromSorraaAndOnyx(row.status, row.seasonNumber === null, availability, null)
     if (next !== row.status) changes.set(row.id, next)
   }
   return changes

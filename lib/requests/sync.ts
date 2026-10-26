@@ -8,7 +8,10 @@ import { getSonarr } from '../services/arr/sonarr'
 import { tmdbPosterPath } from '../calendar/releases'
 import type { RadarrMovie, SonarrSeries } from '../services/arr/types'
 import { getTmdb } from '../services/tmdb/client'
+import { sorraaConfigured } from '../services/sorraa/client'
 import { seasonAvailability } from './availability'
+import { onyxLibrary } from './onyx-presence'
+import { sorraaStatusChanges } from './sorraa-status'
 import { availabilityIn, getLibrary, invalidateLibrary, type LibraryIndex } from './library'
 import { insertMissing, openRequests, requestsByTvdb, requestsForMedia, updateStatuses, type NewRequest } from './repository'
 import { requestStatusFrom, type RequestStatus } from './status'
@@ -32,7 +35,8 @@ export function statusChanges(rows: readonly MediaRequestRow[], index: LibraryIn
 /** Fait avancer les demandes ouvertes (ou celles données). Renvoie le nombre de demandes changées. */
 export async function refreshStatuses(rows: readonly MediaRequestRow[] = openRequests()): Promise<number> {
   if (rows.length === 0) return 0
-  const changes = statusChanges(rows, await getLibrary())
+  // Avec sorraa, il dit où en est la demande et Onyx si elle se lit ; Radarr/Sonarr ne comptent plus.
+  const changes = sorraaConfigured() ? await sorraaStatusChanges(rows, await onyxLibrary()) : statusChanges(rows, await getLibrary())
   updateStatuses(changes)
   return changes.size
 }

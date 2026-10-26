@@ -23,9 +23,10 @@ const cache = new TtlCache<OnyxLibraryIndex>(60_000, 1)
 /** L'index d'Onyx, ou `null` si Onyx ne le sert pas (trop ancien, injoignable). Jamais d'erreur : c'est un enrichissement. */
 export async function onyxLibrary(): Promise<OnyxLibraryIndex | null> {
   if (!(await onyxSupports(OnyxCapability.libraryIndex))) return null
-  const token = (await readSession())?.token
-  if (!token) return null
   try {
+    // Le poller de fond n'a pas de requête, donc pas de cookie : `readSession` y échoue, et Onyx reste inconnu.
+    const token = (await readSession())?.token
+    if (!token) return null
     return await cache.load('index', () => getOnyxLibrary(token))
   } catch (error) {
     console.warn(`[onyx] index de la bibliothèque : ${errorMessage(error)}`)

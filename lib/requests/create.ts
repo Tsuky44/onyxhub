@@ -10,6 +10,7 @@ import { seasonAvailability, seriesAvailability } from './availability'
 import { formatSeasons } from './format'
 import { invalidateLibrary } from './library'
 import { insertMissing, type NewRequest } from './repository'
+import { statusFromSorraaAndOnyx } from './sorraa-status'
 import { requestStatusFrom } from './status'
 
 /**
@@ -128,7 +129,7 @@ async function requestViaSorraa(input: RequestInput, requester: Requester): Prom
   const title = `« ${base.title} »`
 
   if (request.kind === 'movie') {
-    const created = insertMissing([{ ...base, seasonNumber: null, tvdbId: null, status: requestStatusFrom('approved', request.state) }])
+    const created = insertMissing([{ ...base, seasonNumber: null, tvdbId: null, status: statusFromSorraaAndOnyx('approved', true, request.state, null) }])
     return { ok: true, message: created.length === 0 ? `${title} est déjà demandé.` : `${title} est demandé : sorraa le cherche.`, created: created.length }
   }
 
@@ -138,7 +139,7 @@ async function requestViaSorraa(input: RequestInput, requester: Requester): Prom
       ...base,
       seasonNumber: season.number,
       tvdbId,
-      status: requestStatusFrom('approved', season.state),
+      status: statusFromSorraaAndOnyx('approved', false, season.state, null),
     })),
   )
   if (created.length === 0) return { ok: true, message: `Ces saisons de ${title} sont déjà demandées.`, created: 0 }

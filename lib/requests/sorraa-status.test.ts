@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest'
+import { reportedState, statusFromSorraaAndOnyx } from './sorraa-status'
+
+describe('statut d une demande : sorraa avant la dispo, Onyx pour la dispo', () => {
+  it('suit sorraa tant que le titre n est pas dans Onyx', () => {
+    expect(statusFromSorraaAndOnyx('pending', true, 'processing', false)).toBe('processing')
+    expect(statusFromSorraaAndOnyx('approved', false, 'partial', false)).toBe('partial')
+  })
+
+  it('ne dit pas disponible sur la seule parole de sorraa : l import n est pas fini pour Onyx', () => {
+    expect(statusFromSorraaAndOnyx('processing', true, 'available', false)).toBe('processing')
+    expect(statusFromSorraaAndOnyx('processing', true, 'available', null)).toBe('processing')
+  })
+
+  it('est disponible quand Onyx a le titre, même si sorraa ne sait rien', () => {
+    expect(statusFromSorraaAndOnyx('pending', true, undefined, true)).toBe('available')
+    expect(statusFromSorraaAndOnyx('pending', true, 'processing', true)).toBe('available')
+  })
+
+  it('garde une saison en cours d une série déjà dans Onyx', () => {
+    expect(statusFromSorraaAndOnyx('approved', false, 'processing', true)).toBe('processing')
+    expect(statusFromSorraaAndOnyx('processing', false, 'available', true)).toBe('available')
+  })
+
+  it('ne change rien sans information', () => {
+    expect(statusFromSorraaAndOnyx('pending', true, undefined, null)).toBe('pending')
+  })
+})
+
+describe('état rapporté par les demandes de sorraa', () => {
+  const requests = [
+    { id: 1, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'processing' as const, seasons: [{ number: 1, state: 'available' as const }, { number: 2, state: 'processing' as const }] },
+    { id: 2, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'pending' as const, seasons: [{ number: 2, state: 'pending' as const }] },
+  ]
+
+  it('prend le plus avancé des demandeurs pour une saison', () => {
+    expect(reportedState({ seasonNumber: 2 }, requests)).toBe('processing')
+    expect(reportedState({ seasonNumber: 1 }, requests)).toBe('available')
+  })
+
+  it('ignore une saison que sorraa ne couvre pas', () => {
+    expect(reportedState({ seasonNumber: 9 }, requests)).toBeUndefined()
+  })
+})
