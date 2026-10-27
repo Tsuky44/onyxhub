@@ -33,7 +33,7 @@ function EpisodeState({ episode }: { episode: SeasonEpisode }) {
   return null
 }
 
-type Search = { scope: { seasonNumber?: number; episodeId?: number }; label: string }
+type Search = { scope: { seasonNumber?: number; episodeId?: number; episodeNumber?: number }; label: string }
 
 function Season({
   season,
@@ -42,6 +42,7 @@ function Season({
   title,
   canRequest,
   isAdmin,
+  usesSorraa,
   onSearch,
 }: {
   season: SeasonRow
@@ -50,6 +51,8 @@ function Season({
   title: string
   canRequest: boolean
   isAdmin: boolean
+  /** sorraa ajoute le titre à la volée : on peut chercher même sans demande. */
+  usesSorraa: boolean
   onSearch: (search: Search) => void
 }) {
   const router = useRouter()
@@ -60,7 +63,7 @@ function Season({
   const [requesting, startRequest] = useTransition()
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null)
   const panelId = `saison-${season.seasonNumber}`
-  const tracked = season.status !== 'unknown' || season.requested
+  const tracked = usesSorraa || season.status !== 'unknown' || season.requested
 
   function toggle() {
     const next = !open
@@ -166,12 +169,12 @@ function Season({
                       {meta && <p className="mt-0.5 text-footnote text-text-muted">{meta}</p>}
                       {episode.overview && <p className="mt-1 line-clamp-2 text-footnote text-pretty text-text-secondary">{episode.overview}</p>}
                     </div>
-                    {isAdmin && episode.episodeId && (
+                    {isAdmin && (episode.episodeId || usesSorraa) && (
                       <button
                         type="button"
                         aria-label={`Recherche interactive de l'épisode ${episode.episodeNumber}`}
                         onClick={() =>
-                          onSearch({ scope: { episodeId: episode.episodeId ?? undefined }, label: `${title} · S${season.seasonNumber}E${episode.episodeNumber}` })
+                          onSearch({ scope: usesSorraa ? { seasonNumber: season.seasonNumber, episodeNumber: episode.episodeNumber } : { episodeId: episode.episodeId ?? undefined }, label: `${title} · S${season.seasonNumber}E${episode.episodeNumber}` })
                         }
                         className="flex size-11 shrink-0 items-center justify-center self-center rounded-full text-text-muted transition-colors duration-(--motion-micro) ease-onyx hover:bg-glass-fill hover:text-text"
                       >
@@ -197,6 +200,7 @@ export function SeasonList({
   title,
   canRequest,
   isAdmin,
+  usesSorraa,
 }: {
   seasons: SeasonRow[]
   tmdbId: number
@@ -204,6 +208,7 @@ export function SeasonList({
   title: string
   canRequest: boolean
   isAdmin: boolean
+  usesSorraa: boolean
 }) {
   const [search, setSearch] = useState<Search | null>(null)
   return (
@@ -213,7 +218,7 @@ export function SeasonList({
       </h2>
       <ul className="flex flex-col gap-3">
         {seasons.map((season) => (
-          <Season key={season.seasonNumber} season={season} tmdbId={tmdbId} tvdbId={tvdbId} title={title} canRequest={canRequest} isAdmin={isAdmin} onSearch={setSearch} />
+          <Season key={season.seasonNumber} season={season} tmdbId={tmdbId} tvdbId={tvdbId} title={title} canRequest={canRequest} isAdmin={isAdmin} usesSorraa={usesSorraa} onSearch={setSearch} />
         ))}
       </ul>
       {isAdmin && (

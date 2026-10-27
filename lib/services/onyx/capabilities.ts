@@ -12,6 +12,8 @@ export const OnyxCapability = {
   watchLists: 'watch_lists',
   /** `GET /api/library/tmdb-index` : ce que la bibliothèque a, par identifiant TMDB (ADR-0073 d'Onyx). */
   libraryIndex: 'library_tmdb_index',
+  /** `GET /api/library/shows/:tmdb/episodes` : les épisodes d'une série qu'Onyx peut lire (ADR-0082 d'Onyx). */
+  libraryShowEpisodes: 'library_show_episodes',
   /** `POST /api/integrations/onyxhub/imported` : un import annoncé est indexé aussitôt (ADR-0074 d'Onyx). */
   importSignal: 'onyxhub_import_signal',
 } as const

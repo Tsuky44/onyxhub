@@ -5,8 +5,9 @@ import { mediaRequests } from '../db/schema'
 import { errorMessage, NotConfiguredError } from '../http'
 import { getRadarr } from '../services/arr/radarr'
 import { getSonarr } from '../services/arr/sonarr'
+import { getSorraa, sorraaConfigured } from '../services/sorraa/client'
 import { TtlCache } from '../ttl-cache'
-import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sortReleases, type Release } from './releases'
+import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sorraaReleases, sortReleases, type Release } from './releases'
 import { subscriptionReleases } from './subscriptions'
 
 /**
@@ -52,11 +53,24 @@ async function fetchLibraryReleases(from: string, to: string): Promise<LibraryRe
       return []
     }
   }
-  const [movies, episodes] = await Promise.all([
+  const [movies, episodes, fromSorraa] = await Promise.all([
     settle('Radarr', () => getRadarr().calendar(start, end)),
     settle('Sonarr', () => getSonarr().calendar(start, end)),
+    // Dès que sorraa est branché, les demandes y vivent : Radarr et Sonarr ne les voient plus.
+    sorraaConfigured()
+      ? settle('sorraa', async () => {
+          const entries = await getSorraa().calendar(from, to)
+          // L'index ne sert qu'aux affiches et aux liens TMDB : sans lui les sorties s'affichent quand même.
+          const media = entries.length > 0 ? await getSorraa().mediaIndex().catch((error: unknown) => {
+            console.error(`calendrier: index des médias sorraa illisible (${errorMessage(error)})`)
+            return new Map<number, { tmdbId: number; posterPath: string | null }>()
+          }) : new Map<number, { tmdbId: number; posterPath: string | null }>()
+          return sorraaReleases(entries, media)
+        })
+      : Promise.resolve([] as Release[]),
   ])
-  return { releases: [...movieReleases(movies, from, to), ...episodeReleases(episodes, from, to)], unavailable, complete }
+  const arr = [...movieReleases(movies, from, to), ...episodeReleases(episodes, from, to)]
+  return { releases: mergeReleases(arr, fromSorraa), unavailable, complete }
 }
 
 async function libraryReleases(from: string, to: string): Promise<LibraryReleases> {

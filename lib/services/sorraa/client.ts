@@ -66,6 +66,22 @@ export interface SorraaRelease {
   decision: { accepted: boolean; formatScore: number; rejections: { reason: SorraaRejectionReason; actual?: number; limit?: number; score?: number; minimum?: number }[] }
 }
 
+/** Un film ou un épisode du calendrier de sorraa, au jour de sa sortie. */
+export interface SorraaCalendarEntry {
+  mediaId: number
+  mediaTitle: string
+  mediaKind: 'movie' | 'series'
+  unitKind: 'movie' | 'season' | 'episode'
+  seasonNumber?: number
+  episodeNumber?: number
+  /** Le titre de l'épisode ; absent pour un film. */
+  title?: string
+  /** AAAA-MM-JJ. */
+  date: string
+  monitored: boolean
+  status: 'upcoming' | 'missing' | 'downloaded' | 'upgradable'
+}
+
 export interface SorraaRequestInput {
   mediaType: MediaType
   tmdbId: number
@@ -90,6 +106,12 @@ export interface Sorraa {
   removeMedia(mediaId: number, deleteFiles: boolean): Promise<void>
   /** Sort une saison de la recherche et des demandes ; ses fichiers vont à la corbeille avec `deleteFiles`. */
   removeSeason(mediaId: number, season: number, deleteFiles: boolean): Promise<void>
+  /** Ajoute le titre à la bibliothèque de sorraa sans le demander ; `created` est faux s'il y était déjà. */
+  addMedia(mediaType: MediaType, tmdbId: number): Promise<{ id: number; created: boolean }>
+  /** Les films et épisodes qui sortent du jour `from` au jour `to` (AAAA-MM-JJ, inclus ; un an au plus). */
+  calendar(from: string, to: string): Promise<SorraaCalendarEntry[]>
+  /** TMDB et affiche de chaque média de la bibliothèque, par identifiant sorraa. */
+  mediaIndex(): Promise<Map<number, { tmdbId: number; posterPath: string | null }>>
   /** Les films, saisons et épisodes du média. */
   units(mediaId: number): Promise<SorraaUnit[]>
   /** Recherche interactive : interroge les indexeurs pour le média ou l'une de ses unités, sans rien télécharger. */
@@ -187,6 +209,34 @@ export function createSorraa(config: SorraaConfig): Sorraa {
 
     async removeSeason(mediaId, season, deleteFiles) {
       await call(withQuery(`${root}/media/${mediaId}/seasons/${season}`, { deleteFiles: deleteFiles ? 'true' : undefined }), { method: 'DELETE' })
+    },
+
+    async addMedia(mediaType, tmdbId) {
+      const known = await this.mediaId(mediaType, tmdbId)
+      if (known !== null) return { id: known, created: false }
+      const response = await call(`${root}/media`, { method: 'POST', body: { kind: kindOf(mediaType), tmdbId } })
+      return { id: ((await response.json()) as { id: number }).id, created: true }
+    },
+
+    async calendar(from, to) {
+      const result = await requestJson<{ items: SorraaCalendarEntry[] }>(SERVICE, withQuery(`${root}/calendar`, { from, to }), { headers, readErrorDetail: true })
+      return result.items
+    },
+
+    async mediaIndex() {
+      const index = new Map<number, { tmdbId: number; posterPath: string | null }>()
+      let cursor: string | undefined
+      for (let page = 0; page < MEDIA_PAGES; page++) {
+        const result = await requestJson<{ items: { id: number; tmdbId: number; posterPath?: string }[]; nextCursor?: string }>(
+          SERVICE,
+          withQuery(`${root}/media`, { limit: 200, cursor }),
+          { headers, readErrorDetail: true },
+        )
+        for (const item of result.items) index.set(item.id, { tmdbId: item.tmdbId, posterPath: item.posterPath || null })
+        if (!result.nextCursor) break
+        cursor = result.nextCursor
+      }
+      return index
     },
 
     async units(mediaId) {

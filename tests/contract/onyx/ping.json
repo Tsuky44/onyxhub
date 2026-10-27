@@ -14,7 +14,9 @@
     "watch_lists",
     "mediahub_link_test",
     "library_tmdb_index",
+    "library_show_episodes",
     "my_requests",
-    "onyxhub_import_signal"
+    "onyxhub_import_signal",
+    "avatars"
   ]
 }

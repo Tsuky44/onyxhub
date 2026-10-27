@@ -177,7 +177,7 @@ export default async function MediaPage({ params }: { params: Params }) {
       </div>
 
       {mediaType === 'tv' && data.seasons.length > 0 && (
-        <SeasonList seasons={data.seasons} tmdbId={tmdbId} tvdbId={data.tvdbId} title={title} canRequest={viewer.canRequest} isAdmin={viewer.isAdmin} />
+        <SeasonList seasons={data.seasons} tmdbId={tmdbId} tvdbId={data.tvdbId} title={title} canRequest={viewer.canRequest} isAdmin={viewer.isAdmin} usesSorraa={sorraaConfigured()} />
       )}
 
       {media.belongs_to_collection && <CollectionCard collection={media.belongs_to_collection} />}

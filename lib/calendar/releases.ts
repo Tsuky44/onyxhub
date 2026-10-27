@@ -1,3 +1,4 @@
+import type { SorraaCalendarEntry } from '../services/sorraa/client'
 import type { ArrImage, RadarrCalendarMovie, SonarrCalendarEpisode } from '../services/arr/types'
 
 /**
@@ -108,6 +109,37 @@ export function episodeReleases(episodes: readonly SonarrCalendarEpisode[], from
         hasFile: episode.hasFile,
         episode: { season: episode.seasonNumber, number: episode.episodeNumber },
         source: 'library',
+      },
+    ]
+  })
+}
+
+/** Les sorties du calendrier de sorraa ; `media` donne TMDB et l'affiche de chaque média. */
+export function sorraaReleases(
+  entries: readonly SorraaCalendarEntry[],
+  media: ReadonlyMap<number, { tmdbId: number; posterPath: string | null }>,
+): Release[] {
+  return entries.flatMap((entry): Release[] => {
+    // Pas de filtre sur `monitored` : un titre ajouté à sorraa sans être demandé n'est pas surveillé,
+    // et le calendrier restait vide alors que sorraa avait bien des sorties à donner.
+    if (entry.unitKind === 'season') return []
+    const known = media.get(entry.mediaId)
+    const hasFile = entry.status === 'downloaded' || entry.status === 'upgradable'
+    const base = { date: entry.date, title: entry.mediaTitle, tmdbId: known?.tmdbId ?? null, posterPath: known?.posterPath ?? null, hasFile, source: 'library' as const }
+    if (entry.unitKind === 'movie') {
+      return [{ ...base, id: `sorraa-movie-${entry.mediaId}`, kind: 'digital', mediaType: 'movie', subtitle: null, episode: null }]
+    }
+    const season = entry.seasonNumber ?? 0
+    const number = entry.episodeNumber ?? 0
+    const code = episodeCode(season, number)
+    return [
+      {
+        ...base,
+        id: `sorraa-episode-${entry.mediaId}-${season}-${number}`,
+        kind: 'episode',
+        mediaType: 'tv',
+        subtitle: entry.title ? `${code} · ${entry.title}` : code,
+        episode: { season, number },
       },
     ]
   })

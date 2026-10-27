@@ -1,6 +1,36 @@
 import { describe, expect, it } from 'vitest'
 import type { RadarrCalendarMovie, SonarrCalendarEpisode } from '../services/arr/types'
-import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sortReleases, tmdbPosterPath, type Release } from './releases'
+import type { SorraaCalendarEntry } from '../services/sorraa/client'
+import { episodeReleases, groupEpisodeDrops, mergeReleases, movieReleases, sorraaReleases, sortReleases, tmdbPosterPath, type Release } from './releases'
+
+describe('sorties sorraa', () => {
+  const entry = (fields: Partial<SorraaCalendarEntry>): SorraaCalendarEntry => ({
+    mediaId: 1,
+    mediaTitle: 'Matrix',
+    mediaKind: 'movie',
+    unitKind: 'movie',
+    date: '2026-10-20',
+    monitored: false,
+    status: 'missing',
+    ...fields,
+  })
+
+  it('affiche une sortie même non surveillée, sans index des médias', () => {
+    const releases = sorraaReleases([entry({})], new Map())
+    expect(releases.map((release) => [release.title, release.date, release.tmdbId])).toEqual([['Matrix', '2026-10-20', null]])
+  })
+
+  it('donne une ligne par épisode, jamais pour la saison entière', () => {
+    const releases = sorraaReleases(
+      [
+        entry({ mediaId: 2, mediaTitle: 'GoT', mediaKind: 'series', unitKind: 'episode', seasonNumber: 1, episodeNumber: 2, title: 'Pilote' }),
+        entry({ mediaId: 2, mediaKind: 'series', unitKind: 'season', seasonNumber: 1 }),
+      ],
+      new Map([[2, { tmdbId: 1399, posterPath: '/p.jpg' }]]),
+    )
+    expect(releases.map((release) => [release.subtitle, release.tmdbId, release.posterPath])).toEqual([['S01E02 · Pilote', 1399, '/p.jpg']])
+  })
+})
 
 const movie = (fields: Partial<RadarrCalendarMovie>): RadarrCalendarMovie => ({
   id: 1,

@@ -5,7 +5,7 @@ import { mockFetch } from '@/tests/fetch-mock'
 import { pingOnyx } from '../services/onyx/auth'
 import { OnyxCapability } from '../services/onyx/capabilities'
 import { announceImport } from '../services/onyx/imports'
-import { fetchOnyxLibrary } from '../services/onyx/library'
+import { fetchOnyxLibrary, fetchOnyxShowEpisodes } from '../services/onyx/library'
 import { createOnyxWatchLater } from '../services/onyx/lists'
 import { createOnyxSettings } from '../services/onyx/settings'
 import type { Availability } from './availability'
@@ -50,6 +50,7 @@ const UPSTREAM: Record<string, string> = {
       'my_requests.json',
       'imported.json',
       'library_tmdb_index.json',
+      'library_show_episodes.json',
       'mediahub_link_test.json',
       'request_feed.json',
     ].map((name) => [name, `contract/onyxhub/${name}`]),
@@ -122,6 +123,13 @@ describe('contrat avec Onyx', () => {
     expect(onyxMediaId(index, 'movie', 603)).toBe(12)
     expect(onyxMediaId(index, 'tv', 1399)).toBe(40)
     expect(await createOnyxSettings('http://onyx:8080', 't').testHub()).toMatchObject({ ok: true })
+  })
+
+  it('lit les épisodes lisibles d’une série tels qu’Onyx les rend', async () => {
+    mockFetch([{ match: /\/api\/library\/shows\/1399\/episodes$/, body: fixture('library_show_episodes.json') }])
+    const seasons = await fetchOnyxShowEpisodes('http://onyx:8080', 't', 1399)
+    expect([...(seasons.get(1) ?? [])]).toEqual([1, 2, 4])
+    expect([...(seasons.get(2) ?? [])]).toEqual([5])
   })
 
   it('n’attend d’Onyx que des capacités que l’Onyx actuel annonce', async () => {

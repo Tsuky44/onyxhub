@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { Dialog } from '@/components/ui/Dialog'
@@ -9,8 +9,9 @@ import { DownloadIcon, SearchIcon, WarningIcon } from '@/lib/icons'
 import { formatBytes } from '@/lib/requests/format'
 import type { ArrRelease } from '@/lib/services/arr/types'
 import type { MediaType } from '@/lib/services/tmdb/types'
-import { grabReleaseAction, searchReleasesAction } from './actions'
+import { discardSearchAction, grabReleaseAction, searchReleasesAction } from './actions'
 
+type Scope = { seasonNumber?: number; episodeId?: number; episodeNumber?: number }
 type Sort = 'seeders' | 'size' | 'age'
 
 function age(release: ArrRelease): string {
@@ -40,7 +41,7 @@ export function ReleaseSearch({
   mediaType: MediaType
   tmdbId: number
   tvdbId: number | null
-  scope: { seasonNumber?: number; episodeId?: number }
+  scope: Scope
   label: string
 }) {
   return (
@@ -59,7 +60,7 @@ function Results({
   mediaType: MediaType
   tmdbId: number
   tvdbId: number | null
-  scope: { seasonNumber?: number; episodeId?: number }
+  scope: Scope
 }) {
   const [releases, setReleases] = useState<ArrRelease[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,15 +71,27 @@ function Results({
   const [sort, setSort] = useState<Sort>('seeders')
   const [hideRejected, setHideRejected] = useState(false)
   const scopeKey = JSON.stringify(scope)
+  // sorraa ajoute le titre le temps de la recherche : sans release choisie, on le lui fait oublier en quittant.
+  const added = useRef(false)
+  const grabbedAny = useRef(false)
 
   // Monté à l'ouverture de la modale (et remonté pour une autre saison) : l'état part toujours de zéro.
   useEffect(() => {
     startSearch(async () => {
       const result = await searchReleasesAction(mediaType, tmdbId, JSON.parse(scopeKey) as typeof scope, tvdbId)
-      if (result.ok) setReleases(result.value)
-      else setError(result.message)
+      if (result.ok) {
+        added.current = result.value.addedToLibrary
+        setReleases(result.value.releases)
+      } else setError(result.message)
     })
   }, [mediaType, tmdbId, tvdbId, scopeKey])
+
+  useEffect(
+    () => () => {
+      if (added.current && !grabbedAny.current) void discardSearchAction(mediaType, tmdbId)
+    },
+    [mediaType, tmdbId],
+  )
 
   const visible = useMemo(() => {
     const needle = filter.trim().toLowerCase()
@@ -90,6 +103,7 @@ function Results({
   async function grab(release: ArrRelease) {
     setGrabbing(release.guid)
     const result = await grabReleaseAction(mediaType, release.guid, release.indexerId)
+    if (result.ok) grabbedAny.current = true
     setGrabbed((previous) => ({ ...previous, [release.guid]: result.ok ? { ok: true, message: result.value } : { ok: false, message: result.message } }))
     setGrabbing(null)
   }

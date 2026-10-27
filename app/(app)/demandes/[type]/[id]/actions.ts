@@ -6,7 +6,7 @@ import { errorMessage } from '@/lib/http'
 import { mediaDownloads, type DownloadProgress } from '@/lib/requests/downloads'
 import { mediaHref } from '@/lib/requests/format'
 import { isMediaType } from '@/lib/requests/media-item'
-import { automaticSearch, grabRelease, searchReleases, seasonEpisodes, type SeasonEpisode } from '@/lib/requests/media-tools'
+import { automaticSearch, discardSearchedMedia, grabRelease, searchReleases, seasonEpisodes, type SeasonEpisode } from '@/lib/requests/media-tools'
 import { markAvailable, removeMedia, removeSeason } from '@/lib/requests/remove'
 import type { ArrRelease } from '@/lib/services/arr/types'
 import type { MediaType } from '@/lib/services/tmdb/types'
@@ -63,16 +63,23 @@ export async function automaticSearchAction(mediaType: MediaType, tmdbId: number
 export async function searchReleasesAction(
   mediaType: MediaType,
   tmdbId: number,
-  scope: { seasonNumber?: number; episodeId?: number },
+  scope: { seasonNumber?: number; episodeId?: number; episodeNumber?: number },
   tvdbId: number | null,
-): Promise<Result<ArrRelease[]>> {
+): Promise<Result<{ releases: ArrRelease[]; addedToLibrary: boolean }>> {
   if (!(await admin())) return FORBIDDEN
   if (!isMediaType(mediaType) || !isId(tmdbId)) return { ok: false, message: 'Média inconnu.' }
   const clean = {
     seasonNumber: Number.isInteger(scope?.seasonNumber) && (scope.seasonNumber ?? -1) >= 0 ? scope.seasonNumber : undefined,
     episodeId: isId(scope?.episodeId) ? scope.episodeId : undefined,
+    episodeNumber: Number.isInteger(scope?.episodeNumber) && (scope.episodeNumber ?? -1) >= 0 ? scope.episodeNumber : undefined,
   }
   return attempt(() => searchReleases(mediaType, tmdbId, clean, optionalId(tvdbId)))
+}
+
+/** Recherche fermée sans release choisie : sorraa oublie le titre qu'elle avait ajouté. */
+export async function discardSearchAction(mediaType: MediaType, tmdbId: number): Promise<void> {
+  if (!(await admin()) || !isMediaType(mediaType) || !isId(tmdbId)) return
+  await discardSearchedMedia(mediaType, tmdbId).catch(() => {})
 }
 
 export async function grabReleaseAction(mediaType: MediaType, guid: string, indexerId: number): Promise<Result<string>> {

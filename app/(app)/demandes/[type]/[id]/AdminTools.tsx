@@ -76,13 +76,13 @@ export function AdminTools({
           <ManageIcon size={18} aria-hidden />
           Gérer
         </Button>
-        {inLibrary && (
+        {(inLibrary || usesSorraa) && (
           <Button variant="ghost" pending={pending && !manageOpen} onClick={() => run(() => automaticSearchAction(mediaType, tmdbId, null, tvdbId), false)}>
             <AutoSearchIcon size={18} aria-hidden />
             Recherche auto
           </Button>
         )}
-        {inLibrary && mediaType === 'movie' && (
+        {(inLibrary || usesSorraa) && mediaType === 'movie' && (
           <Button variant="ghost" onClick={() => setSearchOpen(true)}>
             <InteractiveSearchIcon size={18} aria-hidden />
             Recherche interactive
