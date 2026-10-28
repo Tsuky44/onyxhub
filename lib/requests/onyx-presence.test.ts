@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mockFetch } from '@/tests/fetch-mock'
 import { fetchOnyxLibrary } from '../services/onyx/library'
-import { onyxMediaId, withOnyxPresence } from './onyx-presence'
+import { onyxMediaId, seenByOnyx, withOnyxPresence } from './onyx-presence'
 
 describe('ce qu’Onyx a déjà', () => {
   it('lit l’index d’Onyx et sépare films et séries de même identifiant TMDB', async () => {
@@ -21,6 +21,16 @@ describe('ce qu’Onyx a déjà', () => {
   it('laisse Radarr/Sonarr décider dès qu’ils connaissent le titre', () => {
     expect(withOnyxPresence('partial', true)).toBe('partial')
     expect(withOnyxPresence('processing', true)).toBe('processing')
+  })
+
+  it('avec sorraa, une carte n’est disponible ou partielle que si Onyx a le titre', () => {
+    expect(seenByOnyx('available', false)).toBe('processing')
+    expect(seenByOnyx('partial', false)).toBe('processing')
+    expect(seenByOnyx('available', true)).toBe('available')
+    expect(seenByOnyx('partial', true)).toBe('partial')
+    expect(seenByOnyx('unknown', true)).toBe('available')
+    expect(seenByOnyx('pending', false)).toBe('pending')
+    expect(seenByOnyx('unknown', false)).toBe('unknown')
   })
 
   it('sans index (Onyx ancien ou muet), rien n’est réputé dans Onyx', () => {

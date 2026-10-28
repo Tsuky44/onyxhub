@@ -1,22 +1,34 @@
 import 'server-only'
 import { eachLimited } from '../concurrency'
+import { sorraaConfigured } from '../services/sorraa/client'
 import { getTmdb } from '../services/tmdb/client'
 import type { MediaType } from '../services/tmdb/types'
 import { UNKNOWN_AVAILABILITY, type Availability } from './availability'
 import { availabilityIn, getLibrary, type LibraryIndex } from './library'
 import { knownTvdbIds } from './repository'
+import { getSorraaIndex, sorraaAvailabilityIn } from './sorraa-availability'
+
+type Query = { mediaType: MediaType; tmdbId: number }
 
 /**
- * La disponibilité d'un média précis (fiche, serveur Onyx). Une série que
- * Sonarr v3 range sans identifiant TMDB est retrouvée par son identifiant
- * TVDB : celui des demandes s'il est connu, sinon celui de TMDB (gardé 24 h).
+ * La disponibilité d'un média précis (fiche, serveur Onyx). Avec sorraa, c'est
+ * lui qui répond (ADR-0015). Sinon : une série que Sonarr v3 range sans
+ * identifiant TMDB est retrouvée par son identifiant TVDB, celui des demandes
+ * s'il est connu, sinon celui de TMDB (gardé 24 h).
  */
 export async function mediaAvailability(type: MediaType, tmdbId: number, tvdbId?: number | null): Promise<Availability> {
+  if (sorraaConfigured()) return sorraaAvailabilities([{ mediaType: type, tmdbId }]).then(([availability]) => availability ?? UNKNOWN_AVAILABILITY)
   const index = await getLibrary()
   const direct = availabilityIn(index, type, tmdbId, tvdbId)
   if (type === 'movie' || direct.status !== 'unknown' || index.seriesByTmdb.has(tmdbId)) return direct
   const fallback = tvdbId ?? knownTvdbIds([tmdbId]).get(tmdbId) ?? (await getTmdb().externalIds('tv', tmdbId).catch(() => null))?.tvdb_id
   return fallback ? availabilityIn(index, type, tmdbId, fallback) : UNKNOWN_AVAILABILITY
+}
+
+/** Avec sorraa, un seul index pour toute la page ; s'il ne répond pas, les cartes restent sans statut. */
+async function sorraaAvailabilities(items: readonly Query[]): Promise<Availability[]> {
+  const index = await getSorraaIndex()
+  return items.map((item) => (index ? sorraaAvailabilityIn(index, item.mediaType, item.tmdbId) : UNKNOWN_AVAILABILITY))
 }
 
 /**
@@ -26,7 +38,8 @@ export async function mediaAvailability(type: MediaType, tmdbId: number, tvdbId?
  * (un appel TMDB par série) ne sert que si Sonarr range des séries sans
  * identifiant TMDB : sinon une série absente de l'index est vraiment absente.
  */
-export async function availabilityBatch(items: readonly { mediaType: MediaType; tmdbId: number }[]): Promise<Availability[]> {
+export async function availabilityBatch(items: readonly Query[]): Promise<Availability[]> {
+  if (sorraaConfigured()) return sorraaAvailabilities(items)
   const index = await getLibrary()
   const known = availabilityMap(index, items)
   const someSeriesLackTmdb = index.seriesByTvdb.size > index.seriesByTmdb.size
@@ -44,7 +57,16 @@ export async function availabilityBatch(items: readonly { mediaType: MediaType; 
 }
 
 /** Les disponibilités d'une page de cartes, sans aucun appel par carte. */
-export function availabilityMap(index: LibraryIndex, items: readonly { mediaType: MediaType; tmdbId: number }[]): Map<string, Availability> {
+export function availabilityMap(index: LibraryIndex, items: readonly Query[]): Map<string, Availability> {
   const tvdb = knownTvdbIds(items.filter((item) => item.mediaType === 'tv').map((item) => item.tmdbId))
   return new Map(items.map((item) => [`${item.mediaType}:${item.tmdbId}`, availabilityIn(index, item.mediaType, item.tmdbId, tvdb.get(item.tmdbId))]))
+}
+
+/** Les disponibilités des cartes d'OnyxHub (catalogue, « plus tard »), de la source branchée : sorraa, sinon Radarr et Sonarr. */
+export async function availabilityMapFor(items: readonly Query[]): Promise<Map<string, Availability>> {
+  if (sorraaConfigured()) {
+    const results = await sorraaAvailabilities(items)
+    return new Map(items.map((item, position) => [`${item.mediaType}:${item.tmdbId}`, results[position] ?? UNKNOWN_AVAILABILITY]))
+  }
+  return availabilityMap(await getLibrary(), items)
 }

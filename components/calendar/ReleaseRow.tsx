@@ -36,7 +36,10 @@ export function ReleaseRow({ release, size = 'sm' }: { release: UpcomingRelease;
       />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-subhead font-semibold text-text">{release.title}</span>
-        <span className="block truncate text-footnote text-text-muted">{releaseSubtitle(release)}</span>
+        <span className="block truncate text-footnote text-text-muted">
+          {release.time ? `${release.time} · ` : ''}
+          {releaseSubtitle(release)}
+        </span>
       </span>
       <ReleaseBadge release={release} />
     </>

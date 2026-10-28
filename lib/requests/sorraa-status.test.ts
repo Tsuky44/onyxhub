@@ -45,6 +45,22 @@ describe('statut affiché sur la fiche', () => {
     expect(presentedAvailability(unknown, 'movie', [], true).status).toBe('available')
   })
 
+  it('un titre que sorraa a téléchargé sans demande n’est disponible que si Onyx le voit', () => {
+    const downloaded = { status: 'available' as const, available: true, seasons: [] }
+    const partial = { status: 'partial' as const, available: true, seasons: [] }
+
+    expect(presentedAvailability(downloaded, 'movie', [], false).status).toBe('processing')
+    expect(presentedAvailability(downloaded, 'movie', [], true).status).toBe('available')
+    expect(presentedAvailability(partial, 'tv', [], false).status).toBe('processing')
+    expect(presentedAvailability(partial, 'tv', [], true).status).toBe('partial')
+  })
+
+  it('sans sorraa, Radarr et Sonarr gardent leur mot', () => {
+    const downloaded = { status: 'available' as const, available: true, seasons: [] }
+
+    expect(presentedAvailability(downloaded, 'movie', null, false)).toBe(downloaded)
+  })
+
   it('suit les saisons de sorraa', () => {
     const series = [{ id: 1, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'pending' as const, seasons: [{ number: 2, state: 'pending' as const }] }]
     const result = presentedAvailability(unknown, 'tv', series, false)

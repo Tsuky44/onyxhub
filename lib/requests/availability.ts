@@ -38,7 +38,8 @@ export function movieAvailability(movie: RadarrMovie | undefined, downloading: b
   return UNKNOWN_AVAILABILITY
 }
 
-function seasonStatus(complete: boolean, downloading: boolean, hasFiles: boolean, monitored: boolean): AvailabilityStatus {
+/** Le statut d'une saison d'après ce que sa source en dit (Sonarr ou sorraa). */
+export function seasonStatus(complete: boolean, downloading: boolean, hasFiles: boolean, monitored: boolean): AvailabilityStatus {
   if (complete) return 'available'
   if (downloading) return 'processing'
   if (hasFiles) return 'partial'
@@ -49,7 +50,7 @@ function seasonStatus(complete: boolean, downloading: boolean, hasFiles: boolean
 export function seriesAvailability(series: SonarrSeries | undefined, downloadingSeasons: ReadonlySet<number>): Availability {
   if (!series?.id) return UNKNOWN_AVAILABILITY
 
-  const seasons = (series.seasons ?? []).map((season): SeasonAvailability => {
+  return seriesFromSeasons((series.seasons ?? []).map((season): SeasonAvailability => {
     // `totalEpisodeCount` compte aussi les épisodes pas encore diffusés : une
     // saison en cours de diffusion reste « partielle » jusqu'au dernier.
     const totalEpisodes = season.statistics?.totalEpisodeCount ?? 0
@@ -62,8 +63,17 @@ export function seriesAvailability(series: SonarrSeries | undefined, downloading
       totalEpisodes,
       episodeFileCount,
     }
-  })
+  }))
+}
 
+/** Une disponibilité à partir d'un statut seul : la source (Radarr, Sonarr, sorraa) a déjà tranché. */
+export const availabilityOfStatus = of
+
+/**
+ * La disponibilité d'une série d'après celle de ses saisons, quelle que soit la
+ * source qui les a comptées. Pure.
+ */
+export function seriesFromSeasons(seasons: SeasonAvailability[]): Availability {
   // Les épisodes spéciaux (saison 0) ne comptent pas pour la série entière.
   const regular = seasons.filter((season) => season.seasonNumber > 0)
   const withEpisodes = regular.filter((season) => season.totalEpisodes > 0)

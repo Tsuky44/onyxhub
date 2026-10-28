@@ -4,9 +4,8 @@ import { getTmdb } from '../services/tmdb/client'
 import type { MediaType, Paged, TmdbSummary } from '../services/tmdb/types'
 import { activeFilterCount, type DiscoverQuery } from './discover-query'
 import { yearOf } from './format'
-import { getLibrary } from './library'
-import { availabilityMap } from './media-availability'
-import { onyxLibrary, onyxMediaId, withOnyxPresence } from './onyx-presence'
+import { availabilityMapFor } from './media-availability'
+import { cardStatus, onyxLibrary, onyxMediaId } from './onyx-presence'
 import { recentRequestsOf } from './repository'
 import type { AvailabilityStatus } from './status'
 import { listWatchLater } from './watch-later'
@@ -67,11 +66,10 @@ export async function withStatus(items: readonly TmdbSummary[], fallbackType?: M
     seen.add(key)
     return [card]
   })
-  const [library, onyx] = await Promise.all([getLibrary(), onyxLibrary()])
-  const statuses = availabilityMap(library, cards)
+  const [statuses, onyx] = await Promise.all([availabilityMapFor(cards), onyxLibrary()])
   return cards.map((card) => ({
     ...card,
-    status: withOnyxPresence(statuses.get(`${card.mediaType}:${card.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, card.mediaType, card.tmdbId) !== null),
+    status: cardStatus(statuses.get(`${card.mediaType}:${card.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, card.mediaType, card.tmdbId) !== null),
   }))
 }
 
@@ -106,14 +104,13 @@ async function forYou(viewer: Viewer, page: number): Promise<CatalogPage> {
 
 async function watchLaterPage(viewer: Viewer): Promise<CatalogPage> {
   const saved = await listWatchLater(viewer)
-  const [library, onyx] = await Promise.all([getLibrary(), onyxLibrary()])
-  const statuses = availabilityMap(library, saved)
+  const [statuses, onyx] = await Promise.all([availabilityMapFor(saved), onyxLibrary()])
   return {
     items: saved.map((item) => ({
       ...item,
       year: null,
       rating: null,
-      status: withOnyxPresence(statuses.get(`${item.mediaType}:${item.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, item.mediaType, item.tmdbId) !== null),
+      status: cardStatus(statuses.get(`${item.mediaType}:${item.tmdbId}`)?.status ?? 'unknown', onyxMediaId(onyx, item.mediaType, item.tmdbId) !== null),
     })),
     page: 1,
     hasMore: false,

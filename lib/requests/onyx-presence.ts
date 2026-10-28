@@ -4,6 +4,7 @@ import { errorMessage, normalizeBaseUrl } from '../http'
 import { onyxBaseUrl } from '../services/onyx/auth'
 import { OnyxCapability, onyxSupports } from '../services/onyx/capabilities'
 import { getOnyxLibrary, type OnyxLibraryIndex } from '../services/onyx/library'
+import { sorraaConfigured } from '../services/sorraa/client'
 import type { MediaType } from '../services/tmdb/types'
 import { getSetting } from '../settings/store'
 import { TtlCache } from '../ttl-cache'
@@ -53,4 +54,20 @@ export function onyxWatchUrl(mediaType: MediaType, mediaId: number): string | nu
   const base = normalizeBaseUrl(getSetting('onyx_web_url')) ?? onyxBaseUrl()
   if (!base) return null
   return `${base}/?${mediaType === 'movie' ? 'movie' : 'show'}=${mediaId}`
+}
+
+/**
+ * Ce qui est « disponible » ou « partiel » ne l'est que si Onyx le voit
+ * (ADR-0016) : un titre que sorraa a fini de télécharger mais qu'Onyx n'a pas
+ * encore indexé est en cours d'import, pas lisible. Sans sorraa, Radarr et
+ * Sonarr gardent leur mot (`withOnyxPresence`).
+ */
+export function seenByOnyx(status: AvailabilityStatus, inOnyx: boolean): AvailabilityStatus {
+  if (inOnyx) return withOnyxPresence(status, true)
+  return status === 'available' || status === 'partial' ? 'processing' : status
+}
+
+/** Le statut d'une carte : la règle d'Onyx avec sorraa, celle de Radarr et Sonarr sans. */
+export function cardStatus(status: AvailabilityStatus, inOnyx: boolean): AvailabilityStatus {
+  return sorraaConfigured() ? seenByOnyx(status, inOnyx) : withOnyxPresence(status, inOnyx)
 }

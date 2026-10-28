@@ -5,6 +5,7 @@ import { getSonarr } from '../services/arr/sonarr'
 import type { QueueItem, RadarrMovie, SonarrSeries } from '../services/arr/types'
 import { movieAvailability, seriesAvailability, UNKNOWN_AVAILABILITY, type Availability } from './availability'
 import type { MediaType } from '../services/tmdb/types'
+import { invalidateSorraaIndex } from './sorraa-availability'
 
 /**
  * Ce que Radarr et Sonarr ont, lu en une fois : toute la bibliothèque et la
@@ -122,11 +123,12 @@ export async function getLibrary(): Promise<LibraryIndex> {
   return load
 }
 
-/** À appeler après tout changement côté Radarr/Sonarr (demande, suppression, webhook). */
+/** À appeler après tout changement côté Radarr/Sonarr ou sorraa (demande, suppression, webhook). */
 export function invalidateLibrary(): void {
   generation++
   cached = null
   inFlight = null
+  invalidateSorraaIndex()
 }
 
 export function findSeries(index: LibraryIndex, tmdbId: number, tvdbId?: number | null): SonarrSeries | undefined {

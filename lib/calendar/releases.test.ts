@@ -77,6 +77,22 @@ describe('sorties Sonarr', () => {
     }
     const [release] = episodeReleases([episode], '2026-10-01', '2026-10-31')
     expect(release).toMatchObject({ kind: 'episode', tmdbId: 1399, title: 'GoT', subtitle: 'S02E05 · Le Nord' })
+    const expected = new Date('2026-10-21T20:00:00Z')
+    expect(release?.time).toBe(`${String(expected.getHours()).padStart(2, '0')}:${String(expected.getMinutes()).padStart(2, '0')}`)
+  })
+
+  it("n'invente pas d'heure quand Sonarr ne donne qu'un jour", () => {
+    const episode: SonarrCalendarEpisode = {
+      id: 10,
+      seriesId: 40,
+      seasonNumber: 1,
+      episodeNumber: 1,
+      airDateUtc: '2026-10-21T00:00:00Z',
+      hasFile: false,
+      monitored: true,
+      series: { tvdbId: 1, tmdbId: 1399, title: 'GoT', monitored: true, seasons: [] },
+    }
+    expect(episodeReleases([episode], '2026-10-01', '2026-10-31')[0]?.time).toBeNull()
   })
 
   it('trie par date puis par titre', () => {

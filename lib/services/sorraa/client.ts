@@ -30,6 +30,15 @@ export interface SorraaUnit {
   status?: 'upcoming' | 'missing' | 'downloaded' | 'upgradable'
 }
 
+/** Un média de la bibliothèque de sorraa avec ses unités : de quoi dire ce qu'il possède. */
+export interface SorraaLibraryMedia {
+  id: number
+  kind: 'movie' | 'series'
+  tmdbId: number
+  monitored: boolean
+  units: SorraaUnit[]
+}
+
 export type SorraaRejectionReason =
   | 'quality_not_accepted'
   | 'upgrades_not_allowed'
@@ -112,6 +121,10 @@ export interface Sorraa {
   calendar(from: string, to: string): Promise<SorraaCalendarEntry[]>
   /** TMDB et affiche de chaque média de la bibliothèque, par identifiant sorraa. */
   mediaIndex(): Promise<Map<number, { tmdbId: number; posterPath: string | null }>>
+  /** Toute la bibliothèque avec les unités de chaque média : ce que sorraa possède, en un passage. */
+  library(): Promise<SorraaLibraryMedia[]>
+  /** Toutes les demandes, de tous les demandeurs, avec leur état. */
+  allRequests(): Promise<SorraaRequest[]>
   /** Les films, saisons et épisodes du média. */
   units(mediaId: number): Promise<SorraaUnit[]>
   /** Recherche interactive : interroge les indexeurs pour le média ou l'une de ses unités, sans rien télécharger. */
@@ -237,6 +250,37 @@ export function createSorraa(config: SorraaConfig): Sorraa {
         cursor = result.nextCursor
       }
       return index
+    },
+
+    async library() {
+      const media: SorraaLibraryMedia[] = []
+      let cursor: string | undefined
+      for (let page = 0; page < MEDIA_PAGES; page++) {
+        const result = await requestJson<{ items: SorraaLibraryMedia[]; nextCursor?: string }>(SERVICE, withQuery(`${root}/media`, { limit: 200, cursor }), {
+          headers,
+          readErrorDetail: true,
+          timeoutMs: 30_000,
+        })
+        media.push(...result.items.map(({ id, kind, tmdbId, monitored, units }) => ({ id, kind, tmdbId, monitored, units: units ?? [] })))
+        if (!result.nextCursor) break
+        cursor = result.nextCursor
+      }
+      return media
+    },
+
+    async allRequests() {
+      const requests: SorraaRequest[] = []
+      let cursor: string | undefined
+      for (let page = 0; page < MEDIA_PAGES; page++) {
+        const result = await requestJson<{ items: SorraaRequest[]; nextCursor?: string }>(SERVICE, withQuery(`${root}/requests`, { limit: 200, cursor }), {
+          headers,
+          readErrorDetail: true,
+        })
+        requests.push(...result.items)
+        if (!result.nextCursor) break
+        cursor = result.nextCursor
+      }
+      return requests
     },
 
     async units(mediaId) {

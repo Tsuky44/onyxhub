@@ -20,6 +20,8 @@ export interface Release {
   /** « S02E05 · Titre » pour un épisode, « S02 · Épisodes 1 à 8 » pour une saison sortie d'un coup. */
   subtitle: string | null
   posterPath: string | null
+  /** Heure locale de diffusion (HH:mm), quand la source la donne : seul Sonarr la connaît. */
+  time?: string | null
   /** Le fichier est déjà là (toujours `false` pour un abonnement : rien ne le dit). */
   hasFile: boolean
   /** Saison et numéro d'un épisode : sert à regrouper et à dédoublonner. */
@@ -54,6 +56,15 @@ function dayOf(value: string | undefined): string | null {
   if (/^\d{4}-\d{2}-\d{2}/.test(value) && value.includes('T00:00:00')) return value.slice(0, 10)
   const parsed = new Date(value)
   return Number.isNaN(parsed.getTime()) ? null : localDay(parsed)
+}
+
+/** L'heure locale (HH:mm) d'un instant précis ; `null` pour une date seule ou à minuit UTC pile (Sonarr ne la connaît pas). */
+function timeOf(value: string | undefined): string | null {
+  if (!value || !value.includes('T') || value.includes('T00:00:00')) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
 }
 
 export function movieReleases(movies: readonly RadarrCalendarMovie[], from: string, to: string): Release[] {
@@ -105,6 +116,7 @@ export function episodeReleases(episodes: readonly SonarrCalendarEpisode[], from
         tmdbId: episode.series?.tmdbId ?? null,
         title: episode.series?.title ?? 'Série',
         subtitle: episode.title ? `${code} · ${episode.title}` : code,
+        time: timeOf(episode.airDateUtc),
         posterPath: tmdbPosterPath(episode.series?.images),
         hasFile: episode.hasFile,
         episode: { season: episode.seasonNumber, number: episode.episodeNumber },
