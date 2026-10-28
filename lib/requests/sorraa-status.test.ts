@@ -61,6 +61,23 @@ describe('statut affiché sur la fiche', () => {
     expect(presentedAvailability(downloaded, 'movie', null, false)).toBe(downloaded)
   })
 
+  it('une saison sans fichier ni demande ne devient pas disponible parce que la série est dans Onyx', () => {
+    const season = (seasonNumber: number, status: 'unknown' | 'available', episodeFileCount: number) => ({ seasonNumber, status, available: episodeFileCount > 0, totalEpisodes: 8, episodeFileCount })
+    const arr = { status: 'partial' as const, available: true, seasons: [season(1, 'unknown', 0), season(2, 'available', 8)] }
+
+    for (const requests of [null, []]) {
+      const result = presentedAvailability(arr, 'tv', requests, true)
+      expect(result.seasons.map((entry) => [entry.seasonNumber, entry.status])).toEqual([[1, 'unknown'], [2, 'available']])
+    }
+  })
+
+  it('une saison demandée à sorraa reste en attente tant que rien n est téléchargé', () => {
+    const arr = { status: 'unknown' as const, available: false, seasons: [{ seasonNumber: 1, status: 'unknown' as const, available: false, totalEpisodes: 8, episodeFileCount: 0 }] }
+    const series = [{ id: 1, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'pending' as const, seasons: [{ number: 1, state: 'pending' as const }] }]
+
+    expect(presentedAvailability(arr, 'tv', series, true).seasons[0]?.status).toBe('pending')
+  })
+
   it('suit les saisons de sorraa', () => {
     const series = [{ id: 1, mediaId: 1, kind: 'series' as const, tmdbId: 5, state: 'pending' as const, seasons: [{ number: 2, state: 'pending' as const }] }]
     const result = presentedAvailability(unknown, 'tv', series, false)

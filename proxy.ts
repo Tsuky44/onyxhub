@@ -15,6 +15,9 @@ const PUBLIC_PREFIXES = [
   '/api/media/availability',
   // Le bouton « Tester » d'Onyx : même clé (ADR-0009).
   '/api/integration/ping',
+  // Les envois de sorraa (événements, téléchargements) : même clé. Redirigés
+  // vers la connexion, ils recevaient un 200 de la page et sorraa les croyait livrés.
+  '/api/integration/sorraa',
   // Webhooks Radarr/Sonarr (phase 3) : authentifiés par leur propre jeton.
   '/api/webhooks',
   // Liens de partage de fichiers : le jeton (et le mot de passe éventuel) tient lieu d'accès.

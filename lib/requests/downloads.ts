@@ -28,6 +28,15 @@ export interface DownloadProgress {
   stalled: boolean
 }
 
+/** Les téléchargements d'un média et l'âge de leur mesure, que la barre prolonge (voir live-progress). */
+export interface DownloadsSnapshot {
+  items: DownloadProgress[]
+  /** Millisecondes écoulées depuis la mesure, au moment de répondre. */
+  age: number
+}
+
+export const NO_DOWNLOADS: DownloadsSnapshot = { items: [], age: 0 }
+
 // qBit renvoie 8 640 000 s (100 jours) pour « inconnu ».
 const UNKNOWN_ETA = 8_640_000
 const STALLED_STATES = new Set(['pausedDL', 'stoppedDL', 'stalledDL', 'error', 'missingFiles'])
@@ -80,14 +89,38 @@ export function downloadsIn(
   return result.sort((a, b) => (a.seasonNumber ?? 0) - (b.seasonNumber ?? 0))
 }
 
-export async function mediaDownloads(mediaType: MediaType, tmdbId: number, tvdbId?: number | null): Promise<DownloadProgress[]> {
+export async function mediaDownloads(mediaType: MediaType, tmdbId: number, tvdbId?: number | null): Promise<DownloadsSnapshot> {
   // sorraa, quand il rapporte, dit lui-même où en sont ses téléchargements.
   const reported = sorraaDownloadsFor(mediaType, tmdbId)
   if (reported) return reported
   const index = await getLibrary()
   const hasQueue = mediaType === 'movie' ? index.movieQueue.length > 0 : index.seriesQueue.length > 0
-  if (!hasQueue) return []
+  if (!hasQueue) return NO_DOWNLOADS
   // `snapshot` ne rappelle qBit que si son état a plus d'un intervalle de rafraîchissement.
-  const torrents = (await qbitLive().snapshot()).torrents
-  return downloadsIn(index, torrents, mediaType, tmdbId, tvdbId)
+  const state = await qbitLive().snapshot()
+  return { items: downloadsIn(index, state.torrents, mediaType, tmdbId, tvdbId), age: state.updatedAt > 0 ? Math.max(0, Date.now() - state.updatedAt) : 0 }
+}
+
+/**
+ * Le téléchargement d'un lot de la liste : ses releases réunies en une seule
+ * barre. Pour un lot de saisons, seules les saisons du lot comptent. Pure.
+ */
+export function combineDownloads(items: readonly DownloadProgress[], seasons: readonly number[], title: string): DownloadProgress | null {
+  const relevant = seasons.length > 0 ? items.filter((item) => item.seasonNumber === null || seasons.includes(item.seasonNumber)) : items
+  if (relevant.length === 0) return null
+  const size = relevant.reduce((total, item) => total + item.size, 0)
+  const sizeLeft = relevant.reduce((total, item) => total + item.sizeLeft, 0)
+  const speeds = relevant.flatMap((item) => (item.speed === null ? [] : [item.speed]))
+  const etas = relevant.flatMap((item) => (item.eta === null ? [] : [item.eta]))
+  return {
+    title,
+    seasonNumber: null,
+    progress: size > 0 ? ((size - sizeLeft) / size) * 100 : 0,
+    size,
+    sizeLeft,
+    speed: speeds.length > 0 ? speeds.reduce((total, speed) => total + speed, 0) : null,
+    // Le lot est prêt quand sa dernière release l'est.
+    eta: etas.length === relevant.length ? Math.max(...etas) : null,
+    stalled: relevant.every((item) => item.stalled),
+  }
 }

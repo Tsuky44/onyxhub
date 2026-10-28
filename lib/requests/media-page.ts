@@ -9,7 +9,7 @@ import { getTmdb } from '../services/tmdb/client'
 import type { MediaType, TmdbDetails, TmdbVideo, TmdbWatchProviders } from '../services/tmdb/types'
 import { seasonAvailability, type Availability } from './availability'
 import { withStatus, type CatalogItem } from './catalog'
-import { mediaDownloads, type DownloadProgress } from './downloads'
+import { mediaDownloads, NO_DOWNLOADS, type DownloadsSnapshot } from './downloads'
 import { yearOf } from './format'
 import { findSeries, getLibrary } from './library'
 import { mediaAvailability } from './media-availability'
@@ -59,7 +59,7 @@ export interface MediaPageData {
   providers: TmdbWatchProviders | null
   recommendations: CatalogItem[]
   similar: CatalogItem[]
-  downloads: DownloadProgress[]
+  downloads: DownloadsSnapshot
   /** Pourquoi la demande attend, d'après sorraa ; `null` quand rien n'attend. */
   waiting: RequestWaiting | null
   /** La fiche dans Radarr/Sonarr, pour l'admin seulement. */
@@ -117,7 +117,7 @@ export async function loadMediaPage(mediaType: MediaType, tmdbId: number, viewer
     mediaAvailability(mediaType, tmdbId, tvdbId),
     withStatus(details.recommendations?.results.slice(0, 20) ?? [], mediaType),
     withStatus(details.similar?.results.slice(0, 20) ?? [], mediaType),
-    mediaDownloads(mediaType, tmdbId, tvdbId).catch(() => []),
+    mediaDownloads(mediaType, tmdbId, tvdbId).catch(() => NO_DOWNLOADS),
     viewer.isAdmin ? externalUrl(mediaType, tmdbId, tvdbId) : Promise.resolve(null),
     onyxLibrary(),
     sorraaRequestsFor(mediaType, tmdbId),

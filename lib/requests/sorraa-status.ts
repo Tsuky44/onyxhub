@@ -83,7 +83,11 @@ export function presentedAvailability(
     .sort((a, b) => a - b)
     .map((seasonNumber): SeasonAvailability => {
       const base = arr.seasons.find((season) => season.seasonNumber === seasonNumber) ?? { seasonNumber, status: 'unknown', available: false, totalEpisodes: 0, episodeFileCount: 0 }
-      const next = presentedStatus(known ? reportedState({ seasonNumber }, known) : undefined, inOnyx, false, base.status, viaSorraa)
+      const reported = known ? reportedState({ seasonNumber }, known) : undefined
+      // Onyx ne connaît que le titre : une saison sans fichier, ni demande, ni
+      // suivi reste « inconnue » (on propose de la demander) au lieu de passer
+      // « disponible » parce que la série, elle, est dans Onyx.
+      const next = reported === undefined && base.status === 'unknown' ? 'unknown' : presentedStatus(reported, inOnyx, false, base.status, viaSorraa)
       return { ...base, status: next, available: next === 'available' || next === 'partial' || base.available }
     })
 

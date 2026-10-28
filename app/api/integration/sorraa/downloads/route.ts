@@ -6,7 +6,8 @@ import { recordSorraaDownloads } from '@/lib/integration/sorraa-downloads'
 /**
  * `POST /api/integration/sorraa/downloads` : sorraa dit où en sont les
  * téléchargements en cours. Le rapport est entier et remplace le précédent ;
- * il est gardé en mémoire (il se renouvelle au moins chaque minute).
+ * il est gardé en mémoire. sorraa relève son client toutes les 10 s et
+ * n'envoie que ce qui a changé, ou chaque minute pour dire qu'il est là.
  */
 export async function POST(request: Request) {
   const caller = await resolveCaller(request)

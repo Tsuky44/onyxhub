@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { getViewer } from '@/lib/auth/viewer'
 import { errorMessage } from '@/lib/http'
+import { MAX_TARGETS, type DownloadTarget } from '@/lib/requests/download-targets'
+import { downloadsOf, type GroupDownloads } from '@/lib/requests/group-downloads'
 import { loadRequestPage, parseListFilters, type RequestListPage } from '@/lib/requests/list'
+import { isMediaType } from '@/lib/requests/media-item'
 import { removeRequests } from '@/lib/requests/remove'
 import { withWaiting } from '@/lib/requests/sorraa-waiting'
 import { importFromArr, refreshStatuses } from '@/lib/requests/sync'
@@ -14,6 +17,29 @@ export async function loadRequestPageAction(search: string, offset: number): Pro
   const viewer = await getViewer()
   const safeOffset = Number.isInteger(offset) && offset >= 0 ? offset : 0
   return withWaiting(loadRequestPage(parseListFilters(new URLSearchParams(typeof search === 'string' ? search : ''), viewer.name), safeOffset))
+}
+
+const isTarget = (value: unknown): value is DownloadTarget => {
+  const target = value as Partial<DownloadTarget> | null
+  return (
+    typeof target === 'object' &&
+    target !== null &&
+    typeof target.key === 'string' &&
+    target.key.length <= 200 &&
+    isMediaType(target.mediaType) &&
+    Number.isInteger(target.tmdbId) &&
+    (target.tmdbId ?? 0) > 0 &&
+    Array.isArray(target.seasons) &&
+    target.seasons.every((season) => Number.isInteger(season) && season >= 0)
+  )
+}
+
+/** La barre de chaque lot encore ouvert de la liste, redemandée par la page tant qu'un lot télécharge. */
+export async function listDownloadsAction(targets: DownloadTarget[]): Promise<GroupDownloads> {
+  await getViewer()
+  const clean = Array.isArray(targets) ? targets.filter(isTarget).slice(0, MAX_TARGETS) : []
+  if (clean.length === 0) return { downloads: {}, age: 0 }
+  return downloadsOf(clean)
 }
 
 export async function deleteRequestsAction(ids: number[]): Promise<{ ok: boolean; message: string }> {

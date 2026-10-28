@@ -10,27 +10,66 @@ import { RequestStatusBadge } from '@/components/media/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ProgressBar } from '@/components/ui/Panel'
 import { cn } from '@/lib/cn'
 import { ListIcon, RefreshIcon, SyncIcon, TrashIcon } from '@/lib/icons'
+import { groupKey } from '@/lib/requests/download-targets'
+import type { DownloadProgress } from '@/lib/requests/downloads'
 import { formatRelative, formatSeasons, mediaHref } from '@/lib/requests/format'
+import type { GroupDownloads } from '@/lib/requests/group-downloads'
+import { formatEta, formatPercent } from '@/lib/requests/live-progress'
 import { waitingText } from '@/lib/requests/waiting'
 import type { RequestGroup, RequestListPage } from '@/lib/requests/list'
 import { deleteRequestsAction, loadRequestPageAction, refreshStatusesAction, syncRequestsAction } from './actions'
+import { useListDownloads } from './useListDownloads'
 
 type Feedback = { ok: boolean; message: string } | null
 
-const keyOf = (group: RequestGroup) => group.ids.join('-')
+const keyOf = groupKey
 
 const THUMB = { sizes: '48px', source: 'w185' } as const
+
+/** La barre d'un lot qui télécharge, sous sa ligne de détails : le pourcentage, puis le temps restant. */
+function RowDownload({ download, title }: { download: DownloadProgress; title: string }) {
+  const eta = formatEta(download.eta)
+  return (
+    <div className="mt-1.5 flex items-center gap-2 text-footnote tabular-nums">
+      <ProgressBar
+        value={download.progress}
+        label={`Téléchargement de ${title}`}
+        tone={download.stalled ? 'warning' : 'accent'}
+        className="h-1 max-w-56 min-w-10 flex-1"
+      />
+      <span className="shrink-0 font-medium text-text">{formatPercent(download.progress)}</span>
+      {/* Sur un écran étroit, le temps restant cède la place : la barre et le pourcentage restent. */}
+      {(download.stalled || eta) && (
+        <span className="min-w-0 truncate text-text-muted">{download.stalled ? 'en pause' : `reste ${eta}`}</span>
+      )}
+    </div>
+  )
+}
 
 /**
  * La liste des demandes de MediaHub : une ligne par lot, défilement infini,
  * et pour l'admin la sélection multiple, la suppression groupée et la
  * synchronisation avec Radarr/Sonarr.
  */
-export function RequestList({ initial, search, isAdmin, viewerName }: { initial: RequestListPage; search: string; isAdmin: boolean; viewerName: string }) {
+export function RequestList({
+  initial,
+  initialDownloads,
+  search,
+  isAdmin,
+  viewerName,
+}: {
+  initial: RequestListPage
+  initialDownloads: GroupDownloads
+  search: string
+  isAdmin: boolean
+  viewerName: string
+}) {
   const router = useRouter()
   const [groups, setGroups] = useState(initial.groups)
+  const downloads = useListDownloads(groups, initialDownloads)
   const [nextOffset, setNextOffset] = useState(initial.nextOffset)
   const [hasMore, setHasMore] = useState(initial.hasMore)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -173,6 +212,7 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
           {groups.map((group) => {
             const key = keyOf(group)
             const checked = selected.has(key)
+            const download = downloads[key]
             return (
               <li key={key} className={cn('flex items-center gap-3 px-3 py-3 shell:gap-4 shell:px-4', checked && 'bg-glass-fill')}>
                 {isAdmin && (
@@ -186,7 +226,7 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
                 )}
                 <Link href={mediaHref(group.mediaType, group.tmdbId)} className="flex min-w-0 flex-1 items-center gap-3 shell:gap-4">
                   <Poster path={group.posterPath} title={group.title} {...THUMB} compact className="w-11 shrink-0 shell:w-12" />
-                  <span className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1">
                     <span className="block truncate text-callout font-semibold text-text">{group.title}</span>
                     <span className="block truncate text-footnote text-text-muted">
                       {group.mediaType === 'movie' ? 'Film' : formatSeasons(group.seasons) || 'Série'}
@@ -195,10 +235,15 @@ export function RequestList({ initial, search, isAdmin, viewerName }: { initial:
                       {' · '}
                       {formatRelative(new Date(group.requestedAt))}
                     </span>
-                    {group.waiting && <span className="block truncate text-footnote text-warning">{waitingText(group.waiting)}</span>}
-                  </span>
+                    {download ? (
+                      <RowDownload download={download} title={group.title} />
+                    ) : (
+                      group.waiting && <span className="block truncate text-footnote text-warning">{waitingText(group.waiting)}</span>
+                    )}
+                  </div>
                 </Link>
-                <RequestStatusBadge status={group.status} />
+                {/* Sur téléphone, la barre dit déjà « en cours » : le badge lui laisse la largeur. */}
+                <RequestStatusBadge status={group.status} className={cn(download && 'max-shell:hidden')} />
                 {isAdmin && (
                   <button
                     type="button"

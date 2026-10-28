@@ -54,14 +54,38 @@ export function Stat({ label, value, hint, tone }: { label: string; value: React
   )
 }
 
-/** Une barre de progression fine : l'accent, seul usage plein de la couleur. */
-export function ProgressBar({ value, label, tone = 'accent' }: { value: number; label: string; tone?: 'accent' | 'warning' | 'error' }) {
+/**
+ * Une barre de progression fine : l'accent, seul usage plein de la couleur.
+ * Le remplissage glisse (`transform`, sans recalcul de mise en page) : une
+ * barre mise à jour chaque seconde avance d'un mouvement continu.
+ */
+export function ProgressBar({
+  value,
+  label,
+  tone = 'accent',
+  className,
+}: {
+  value: number
+  label: string
+  tone?: 'accent' | 'warning' | 'error'
+  className?: string
+}) {
   const clamped = Math.max(0, Math.min(100, value))
   return (
-    <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(clamped)} aria-label={label} className="h-1.5 overflow-hidden rounded-full bg-elevated">
+    <div
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(clamped)}
+      aria-label={label}
+      className={cn('h-1.5 overflow-hidden rounded-full bg-elevated', className)}
+    >
       <div
-        className={cn('h-full rounded-full', tone === 'warning' ? 'bg-warning' : tone === 'error' ? 'bg-error' : 'bg-accent')}
-        style={{ width: `${clamped}%` }}
+        className={cn(
+          'h-full w-full rounded-full transition-[transform,background-color] duration-(--motion-emphasis) ease-onyx',
+          tone === 'warning' ? 'bg-warning' : tone === 'error' ? 'bg-error' : 'bg-accent',
+        )}
+        style={{ transform: `translateX(${clamped - 100}%)` }}
       />
     </div>
   )

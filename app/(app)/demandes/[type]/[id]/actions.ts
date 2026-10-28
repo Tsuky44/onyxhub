@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getViewer, type Viewer } from '@/lib/auth/viewer'
 import { errorMessage } from '@/lib/http'
-import { mediaDownloads, type DownloadProgress } from '@/lib/requests/downloads'
+import { mediaDownloads, NO_DOWNLOADS, type DownloadsSnapshot } from '@/lib/requests/downloads'
 import { mediaHref } from '@/lib/requests/format'
 import { isMediaType } from '@/lib/requests/media-item'
 import { automaticSearch, discardSearchedMedia, grabRelease, searchReleases, seasonEpisodes, type SeasonEpisode } from '@/lib/requests/media-tools'
@@ -39,14 +39,14 @@ export async function loadSeasonAction(tmdbId: number, seasonNumber: number, tvd
   return attempt(() => seasonEpisodes(tmdbId, seasonNumber, optionalId(tvdbId)))
 }
 
-export async function downloadsAction(mediaType: MediaType, tmdbId: number, tvdbId: number | null): Promise<DownloadProgress[]> {
+export async function downloadsAction(mediaType: MediaType, tmdbId: number, tvdbId: number | null): Promise<DownloadsSnapshot> {
   await getViewer()
-  if (!isMediaType(mediaType) || !isId(tmdbId)) return []
+  if (!isMediaType(mediaType) || !isId(tmdbId)) return NO_DOWNLOADS
   try {
     return await mediaDownloads(mediaType, tmdbId, optionalId(tvdbId))
   } catch {
     // La progression est un bonus : une panne de qBit ou de l'*arr ne casse pas la fiche.
-    return []
+    return NO_DOWNLOADS
   }
 }
 
