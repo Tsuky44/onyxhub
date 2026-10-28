@@ -20,8 +20,8 @@ import type { GroupDownloads } from '@/lib/requests/group-downloads'
 import { formatEta, formatPercent } from '@/lib/requests/live-progress'
 import { waitingText } from '@/lib/requests/waiting'
 import type { RequestGroup, RequestListPage } from '@/lib/requests/list'
+import { useListDownloads } from '@/components/media/useListDownloads'
 import { deleteRequestsAction, loadRequestPageAction, refreshStatusesAction, syncRequestsAction } from './actions'
-import { useListDownloads } from './useListDownloads'
 
 type Feedback = { ok: boolean; message: string } | null
 

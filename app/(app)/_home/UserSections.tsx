@@ -1,16 +1,18 @@
 import Link from 'next/link'
+import { LiveRequestDownloads, RequestDownloadBar } from '@/components/media/LiveRequestDownloads'
 import { MediaRail } from '@/components/media/MediaRail'
 import { Poster } from '@/components/media/Poster'
 import { RequestStatusBadge } from '@/components/media/StatusBadge'
-import { Panel, PanelError, ProgressBar } from '@/components/ui/Panel'
+import { Panel, PanelError } from '@/components/ui/Panel'
 import type { Viewer } from '@/lib/auth/viewer'
 import { MonthSkeleton, MonthView } from '@/components/calendar/MonthView'
 import { calendarRange, parseCalendarQuery } from '@/lib/calendar/query'
 import { calendarData } from '@/lib/calendar/upcoming'
 import { settle } from '@/lib/home/admin'
-import { homeRequests, type HomeRequest } from '@/lib/home/requests'
+import { homeRequestsWithDownloads, type HomeRequest } from '@/lib/home/requests'
 import { ChevronRightIcon, RequestIcon, SearchIcon } from '@/lib/icons'
 import { loadCatalog } from '@/lib/requests/catalog'
+import { groupKey } from '@/lib/requests/download-targets'
 import { formatRelative, formatSeasons, mediaHref } from '@/lib/requests/format'
 
 /** La recherche de l'accueil : un simple formulaire vers la découverte, sans script. */
@@ -44,7 +46,7 @@ export function RequestRow({ request, showRequester = false }: { request: HomeRe
             {request.mediaType === 'movie' ? 'Film' : formatSeasons(request.seasons) || 'Série'}
             {showRequester ? ` · ${request.requester}` : ''} · {formatRelative(new Date(request.requestedAt))}
           </span>
-          {request.progress !== null && <ProgressBar value={request.progress} label={`Téléchargement de ${request.title}`} />}
+          <RequestDownloadBar downloadKey={groupKey(request)} title={request.title} />
         </span>
       </Link>
     </li>
@@ -52,7 +54,7 @@ export function RequestRow({ request, showRequester = false }: { request: HomeRe
 }
 
 export async function MyRequests({ viewer }: { viewer: Viewer }) {
-  const requests = await homeRequests({ viewer: viewer.name, owner: 'mine' }, 6)
+  const { requests, downloads } = await homeRequestsWithDownloads({ viewer: viewer.name, owner: 'mine' }, 6)
   return (
     <Panel title="Mes demandes" href={requests.length > 0 ? '/demandes/liste?demandeur=moi' : undefined}>
       {requests.length === 0 ? (
@@ -66,11 +68,13 @@ export async function MyRequests({ viewer }: { viewer: Viewer }) {
           )}
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {requests.map((request) => (
-            <RequestRow key={request.ids.join('-')} request={request} />
-          ))}
-        </ul>
+        <LiveRequestDownloads groups={requests} initial={downloads}>
+          <ul className="flex flex-col gap-4">
+            {requests.map((request) => (
+              <RequestRow key={request.ids.join('-')} request={request} />
+            ))}
+          </ul>
+        </LiveRequestDownloads>
       )}
     </Panel>
   )
