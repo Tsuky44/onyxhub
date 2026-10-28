@@ -30,7 +30,7 @@ export function ServiceCard({
 }: {
   serviceId: ServiceId
   snapshots: FieldSnapshot[]
-  /** Un état lu ailleurs que dans OnyxHub (la liaison vue depuis Onyx). */
+  /** Un état lu ailleurs que dans OnyxHub (la liaison vue depuis Onyx ou sorraa). */
   note?: { good: boolean; text: string }
 }) {
   const service = findService(serviceId)
@@ -110,14 +110,14 @@ export function ServiceCard({
           {/*
             Ordre inversé dans le DOM : la touche Entrée déclenche le premier
             bouton d'envoi du formulaire, qui doit être « Enregistrer » (ou
-            « Connecter Onyx », qui enregistre aussi) et pas « Retirer ».
+            « Connecter Onyx » et « Relier sorraa », qui enregistrent aussi) et pas « Retirer ».
             L'ordre visuel reste Retirer · Tester · Enregistrer.
           */}
           <div className="ml-auto flex flex-row-reverse flex-wrap gap-2">
-            {service.linksOnyx ? (
+            {service.linksOnyx || service.linksSorraa ? (
               <>
                 <Button type="submit" name="intent" value="link" pending={pending}>
-                  Connecter Onyx
+                  {service.linksSorraa ? 'Relier sorraa' : 'Connecter Onyx'}
                 </Button>
                 <Button type="submit" name="intent" value="save" variant="secondary" disabled={pending}>
                   Enregistrer

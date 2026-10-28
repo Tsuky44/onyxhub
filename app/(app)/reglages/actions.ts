@@ -5,6 +5,7 @@ import { readSession } from '@/lib/auth/session'
 import { requireAdmin } from '@/lib/auth/viewer'
 import { randomToken } from '@/lib/crypto'
 import { linkOnyx } from '@/lib/integration/onyx-link'
+import { linkSorraa } from '@/lib/integration/sorraa-link'
 import { requestOrigin } from '@/lib/request-origin'
 import { parseServiceForm } from '@/lib/settings/form'
 import { findService, type ServiceId, type SettingKey } from '@/lib/settings/registry'
@@ -31,7 +32,7 @@ function valuesForTest(serviceId: ServiceId, updates: Record<string, string>): V
 
 /**
  * Une seule action par carte de service ; le bouton cliqué dit l'intention
- * (`intent` = test, save, clear, generate ou link). Chaque appel revérifie le droit
+ * (`intent` = test, save, clear, generate ou link, vers Onyx ou sorraa). Chaque appel revérifie le droit
  * admin : être appelée depuis la page Réglages ne prouve rien.
  */
 export async function serviceAction(serviceId: ServiceId, _previous: ServiceFormState, form: FormData): Promise<ServiceFormState> {
@@ -65,9 +66,14 @@ export async function serviceAction(serviceId: ServiceId, _previous: ServiceForm
   if (Object.keys(errors).length > 0) return { kind: 'invalid', errors }
 
   if (intent === 'link') {
-    if (!service.linksOnyx) return { kind: 'error', message: 'Action inconnue.' }
-    // L'adresse saisie compte tout de suite : on l'enregistre avant de l'écrire dans Onyx.
+    if (!service.linksOnyx && !service.linksSorraa) return { kind: 'error', message: 'Action inconnue.' }
+    // L'adresse saisie compte tout de suite : on l'enregistre avant de l'écrire dans Onyx ou sorraa.
     setSettings(updates)
+    if (service.linksSorraa) {
+      const outcome = await linkSorraa(await requestOrigin())
+      revalidatePath('/reglages')
+      return { kind: 'tested', ...outcome }
+    }
     const session = await readSession()
     if (!session) return { kind: 'error', message: 'Session expirée, reconnecte-toi.' }
     const outcome = await linkOnyx(session.token, await requestOrigin())

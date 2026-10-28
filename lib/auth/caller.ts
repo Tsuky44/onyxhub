@@ -23,6 +23,20 @@ function playerId(request: Request): number | null {
   return Number.isInteger(id) && id > 0 ? id : null
 }
 
+/**
+ * sorraa, pour ses routes : la clé qui lui est propre, ou la clé d'intégration
+ * d'Onyx (celle des premières liaisons). Une clé à lui se donne et se change
+ * sans toucher à Onyx (ADR-0017).
+ */
+export function resolveSorraaCaller(request: Request): { ok: true } | { ok: false; status: 401; message: string } {
+  const presented = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
+  if (!presented) return { ok: false, status: 401, message: "Clé d'intégration attendue." }
+  const accepted = [getSetting('sorraa_hub_key'), getSetting('integration_api_key')].filter((key): key is string => Boolean(key))
+  if (accepted.length === 0) return { ok: false, status: 401, message: 'Aucune clé pour sorraa dans OnyxHub : génère-la dans Réglages.' }
+  if (!accepted.some((key) => safeEqual(presented, key))) return { ok: false, status: 401, message: 'Clé invalide.' }
+  return { ok: true }
+}
+
 export async function resolveCaller(request: Request): Promise<Caller> {
   const authorization = request.headers.get('authorization')
   if (authorization) {

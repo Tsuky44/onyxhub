@@ -133,6 +133,19 @@ export interface Sorraa {
   grab(releaseId: string): Promise<void>
   /** Lance la recherche automatique de ce qui manque au média. */
   search(mediaId: number): Promise<void>
+  /** Où sorraa envoie ses événements et ses téléchargements ; la clé n'est jamais rendue. */
+  hubLink(): Promise<SorraaHubLink>
+  /** Relie sorraa à cet OnyxHub. */
+  setHubLink(url: string, key: string): Promise<void>
+  /** sorraa joint OnyxHub avec sa liaison : un refus est une réponse, pas une erreur. */
+  testHubLink(): Promise<{ ok: boolean; detail?: string }>
+}
+
+export interface SorraaHubLink {
+  linked: boolean
+  url?: string
+  /** Pourquoi le dernier envoi a échoué ; absent s'il a réussi. */
+  lastError?: string
 }
 
 export interface SorraaConfig {
@@ -306,6 +319,19 @@ export function createSorraa(config: SorraaConfig): Sorraa {
 
     async search(mediaId) {
       await call(`${root}/media/${mediaId}/searches`, { method: 'POST' })
+    },
+
+    async hubLink() {
+      return requestJson<SorraaHubLink>(SERVICE, `${root}/hub-link`, { headers, readErrorDetail: true, timeoutMs: 5_000 })
+    },
+
+    async setHubLink(url, key) {
+      await call(`${root}/hub-link`, { method: 'PUT', body: { url, key } })
+    },
+
+    async testHubLink() {
+      const response = await call(`${root}/hub-link/test`, { method: 'POST' })
+      return (await response.json()) as { ok: boolean; detail?: string }
     },
   }
 }

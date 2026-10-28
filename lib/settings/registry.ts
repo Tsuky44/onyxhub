@@ -34,6 +34,8 @@ export interface ServiceDefinition {
   generates?: string
   /** Le bouton « Connecter Onyx » écrit ces réglages dans Onyx (ADR-0009). */
   linksOnyx?: boolean
+  /** Le bouton « Relier sorraa » écrit dans sorraa l'adresse d'OnyxHub et sa clé (ADR-0017). */
+  linksSorraa?: boolean
 }
 
 export const SERVICES = [
@@ -116,11 +118,28 @@ export const SERVICES = [
     id: 'sorraa',
     label: 'sorraa',
     description:
-      "Quand l'URL est renseignée, les demandes (film, série ou seulement quelques saisons) et leur retrait passent par l'API de sorraa à la place de Radarr et Sonarr.",
+      "Quand l'URL est renseignée, les demandes (film, série ou seulement quelques saisons) et leur retrait passent par l'API de sorraa à la place de Radarr et Sonarr. « Relier sorraa » lui donne l'adresse d'OnyxHub et sa clé, pour qu'il dise où en sont ses téléchargements.",
     testable: true,
+    generates: 'sorraa_hub_key',
+    linksSorraa: true,
     fields: [
       { key: 'sorraa_url', label: 'URL', kind: 'url', placeholder: 'http://192.168.1.10:7878' },
       { key: 'sorraa_api_key', label: 'Clé API', kind: 'secret', optional: true, help: "Vide tant que sorraa n'exige pas de clé." },
+      {
+        key: 'sorraa_hub_url',
+        label: "Adresse d'OnyxHub vue par sorraa",
+        kind: 'url',
+        optional: true,
+        placeholder: 'http://192.168.1.10:4400',
+        help: "Vide : celle fixée pour Onyx, sinon l'adresse de ce navigateur.",
+      },
+      {
+        key: 'sorraa_hub_key',
+        label: 'Clé pour sorraa',
+        kind: 'secret',
+        optional: true,
+        help: "Créée par « Relier sorraa » si elle manque. Pour relier depuis sorraa, génère-la ici et colle-la dans ses réglages.",
+      },
     ],
   },
   {

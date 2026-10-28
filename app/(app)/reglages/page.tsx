@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { readSession } from '@/lib/auth/session'
 import { requireAdmin } from '@/lib/auth/viewer'
 import { describeLink, readLinkState } from '@/lib/integration/onyx-link'
+import { readSorraaLink } from '@/lib/integration/sorraa-link'
 import { SERVICES } from '@/lib/settings/registry'
 import { snapshotService } from '@/lib/settings/store'
 import { ServiceCard } from './ServiceCard'
@@ -12,8 +13,8 @@ export const metadata: Metadata = { title: 'Réglages' }
 export default async function SettingsPage() {
   await requireAdmin()
   const session = await readSession()
-  // Un appel à Onyx (5 s au plus) : la carte de liaison dit si Onyx pointe bien ici.
-  const link = session ? describeLink(await readLinkState(session.token)) : undefined
+  // Un appel à Onyx et un à sorraa (5 s au plus chacun, en parallèle) : chaque carte de liaison dit si son service pointe bien ici.
+  const [link, sorraaLink] = await Promise.all([session ? readLinkState(session.token).then(describeLink) : undefined, readSorraaLink()])
   return (
     <div className="max-w-3xl">
       <PageHeader
@@ -26,7 +27,7 @@ export default async function SettingsPage() {
             key={service.id}
             serviceId={service.id}
             snapshots={snapshotService(service.id)}
-            note={'linksOnyx' in service && service.linksOnyx ? link : undefined}
+            note={'linksOnyx' in service && service.linksOnyx ? link : 'linksSorraa' in service && service.linksSorraa ? sorraaLink : undefined}
           />
         ))}
       </div>

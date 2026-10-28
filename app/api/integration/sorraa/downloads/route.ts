@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { resolveCaller } from '@/lib/auth/caller'
+import { resolveSorraaCaller } from '@/lib/auth/caller'
 import { parseSorraaDownloads } from '@/lib/integration/sorraa'
 import { recordSorraaDownloads } from '@/lib/integration/sorraa-downloads'
 
@@ -10,9 +10,8 @@ import { recordSorraaDownloads } from '@/lib/integration/sorraa-downloads'
  * n'envoie que ce qui a changé, ou chaque minute pour dire qu'il est là.
  */
 export async function POST(request: Request) {
-  const caller = await resolveCaller(request)
-  if (caller.kind === 'refused') return NextResponse.json({ error: caller.message }, { status: caller.status })
-  if (caller.kind !== 'onyx') return NextResponse.json({ error: "Clé d'intégration attendue." }, { status: 401 })
+  const caller = resolveSorraaCaller(request)
+  if (!caller.ok) return NextResponse.json({ error: caller.message }, { status: caller.status })
 
   const downloads = parseSorraaDownloads(await request.json().catch(() => null))
   recordSorraaDownloads(downloads)
